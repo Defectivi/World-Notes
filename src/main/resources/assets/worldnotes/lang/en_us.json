@@ -1,0 +1,17 @@
+{
+  "key.category.worldnotes": "World Notes & Coordinates",
+  "key.worldnotes.open_manager": "Open bookmark manager",
+  "worldnotes.title": "World Notes & Coordinates",
+  "worldnotes.add_current": "Add current position",
+  "worldnotes.add_manual": "Add manual bookmark",
+  "worldnotes.filter": "Dimension: %s",
+  "worldnotes.teleport": "Teleport",
+  "worldnotes.teleport_no_permission": "You need operator or teleport permission to use this.",
+  "worldnotes.teleport_success": "Teleported to %s at %s in %s.",
+  "worldnotes.track_blocked": "Another bookmark is already being tracked. Stop it before tracking this bookmark.",
+  "worldnotes.copy": "Copy to chat",
+  "worldnotes.edit": "Edit",
+  "worldnotes.delete": "Delete",
+  "worldnotes.save": "Save",
+  "worldnotes.cancel": "Cancel"
+}
