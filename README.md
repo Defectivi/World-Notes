@@ -11,6 +11,7 @@ Press **B** to open the bookmark manager. The keybind can be changed in **Settin
 #### Bookmark interface
 
 - Bookmark cards display the name, optional player note, coordinates, and dimension on separate lines.
+- Newly created and saved bookmark coordinates are rounded to two decimal places for X, Y, and Z.
 - Selecting a bookmark opens read-only details.
 - A separate Book icon opens the editable bookmark screen.
 - A Nether Star appears beside each bookmark name.
@@ -24,7 +25,7 @@ Press **B** to open the bookmark manager. The keybind can be changed in **Settin
 
 #### Colors and gradients
 
-- Bookmark names support editable red, yellow, blue, orange, and purple gradients.
+- Bookmark names support editable black, red, yellow, blue, orange, purple, green, and pink styles.
 - Dimension labels use gradients throughout the HUD, tracking panel, filters, and bookmark cards:
   - Overworld: green
   - Nether: red

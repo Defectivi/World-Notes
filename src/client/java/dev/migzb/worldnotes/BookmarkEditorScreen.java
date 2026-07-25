@@ -92,9 +92,9 @@ public final class BookmarkEditorScreen extends Screen {
         bookmark.name = name.getValue();
         bookmark.note = note.getValue();
         bookmark.dimension = DIMENSIONS[dimensionIndex];
-        bookmark.x = number(x.getValue(), bookmark.x);
-        bookmark.y = number(y.getValue(), bookmark.y);
-        bookmark.z = number(z.getValue(), bookmark.z);
+        bookmark.x = Bookmark.roundToHundredth(number(x.getValue(), bookmark.x));
+        bookmark.y = Bookmark.roundToHundredth(number(y.getValue(), bookmark.y));
+        bookmark.z = Bookmark.roundToHundredth(number(z.getValue(), bookmark.z));
         return bookmark;
     }
 

@@ -154,7 +154,10 @@ public final class BookmarkScreen extends Screen {
     private void addCurrent() {
         if (minecraft.player == null || minecraft.level == null) return;
         Bookmark bookmark = new Bookmark(WorldNotesClient.profile(minecraft), "New bookmark", "",
-                WorldNotesClient.dimension(minecraft.level), minecraft.player.getX(), minecraft.player.getY(), minecraft.player.getZ());
+                WorldNotesClient.dimension(minecraft.level),
+                Bookmark.roundToHundredth(minecraft.player.getX()),
+                Bookmark.roundToHundredth(minecraft.player.getY()),
+                Bookmark.roundToHundredth(minecraft.player.getZ()));
         minecraft.gui.setScreen(new BookmarkEditorScreen(this, bookmark));
     }
 
@@ -206,6 +209,6 @@ public final class BookmarkScreen extends Screen {
     }
 
     private static String coordinates(Bookmark bookmark) {
-        return String.format(Locale.ROOT, "%.0f, %.0f, %.0f", bookmark.x, bookmark.y, bookmark.z);
+        return String.format(Locale.ROOT, "%.2f, %.2f, %.2f", bookmark.x, bookmark.y, bookmark.z);
     }
 }

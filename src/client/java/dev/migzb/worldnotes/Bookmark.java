@@ -29,6 +29,10 @@ public final class Bookmark {
         this.z = z;
     }
 
+    public static double roundToHundredth(double value) {
+        return Math.round(value * 100.0) / 100.0;
+    }
+
     public Component displayName() {
         String value = name.isBlank() ? "Untitled bookmark" : name;
         if (!hasGradient()) return Component.literal(value);
@@ -56,17 +60,20 @@ public final class Bookmark {
 
     public String gradientLabel() {
         return switch (gradientKey()) {
+            case "black" -> "Black";
             case "red" -> "Red gradient";
             case "yellow" -> "Yellow gradient";
             case "blue" -> "Blue gradient";
             case "orange" -> "Orange gradient";
             case "purple" -> "Purple gradient";
+            case "green" -> "Green gradient";
+            case "pink" -> "Pink gradient";
             default -> "No gradient";
         };
     }
 
     public void cycleGradient() {
-        String[] gradients = {"none", "red", "yellow", "blue", "orange", "purple"};
+        String[] gradients = {"none", "red", "yellow", "blue", "orange", "purple", "black", "green", "pink"};
         for (int i = 0; i < gradients.length; i++) {
             if (gradients[i].equals(gradient)) {
                 gradient = gradients[(i + 1) % gradients.length];
@@ -78,22 +85,28 @@ public final class Bookmark {
 
     private int[] gradientStart() {
         return switch (gradientKey()) {
+            case "black" -> new int[]{0, 0, 0};
             case "red" -> new int[]{255, 85, 85};
             case "yellow" -> new int[]{255, 255, 85};
             case "blue" -> new int[]{85, 255, 255};
             case "orange" -> new int[]{255, 170, 0};
             case "purple" -> new int[]{255, 85, 255};
+            case "green" -> new int[]{85, 255, 85};
+            case "pink" -> new int[]{255, 153, 204};
             default -> null;
         };
     }
 
     private int[] gradientEnd() {
         return switch (gradientKey()) {
+            case "black" -> new int[]{0, 0, 0};
             case "red" -> new int[]{170, 0, 0};
             case "yellow" -> new int[]{255, 170, 0};
             case "blue" -> new int[]{85, 85, 255};
             case "orange" -> new int[]{170, 55, 0};
             case "purple" -> new int[]{170, 0, 170};
+            case "green" -> new int[]{0, 170, 0};
+            case "pink" -> new int[]{255, 51, 136};
             default -> null;
         };
     }

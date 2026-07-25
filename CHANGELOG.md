@@ -17,6 +17,7 @@ All notable changes to the mod are documented here.
 - Added dimension-themed card backgrounds for the Overworld, Nether, and End.
 - Added native Book and Quill icons to the add-bookmark buttons.
 - Added a compact Ender Pearl teleport button with a tooltip.
+- Newly created and saved bookmark coordinates are rounded to two decimal places for X, Y, and Z.
 
 ### Tracking
 
@@ -29,7 +30,7 @@ All notable changes to the mod are documented here.
 
 ### Colors and gradients
 
-- Added editable name gradients: red, yellow, blue, orange, and purple.
+- Added editable name colors and gradients: black, red, yellow, blue, orange, purple, green, and pink.
 - Applied dimension gradients throughout the interface:
   - Overworld: green
   - Nether: red
