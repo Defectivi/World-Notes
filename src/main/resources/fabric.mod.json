@@ -5,7 +5,7 @@
   "name": "World Notes & Coordinates",
   "description": "Dimension-aware local coordinate bookmarks.",
   "icon": "assets/worldnotes/icon.png",
-  "authors": ["migzb"],
+  "authors": ["Yuhzhua"],
   "license": "MIT",
   "environment": "client",
   "entrypoints": {
