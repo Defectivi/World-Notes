@@ -12,7 +12,7 @@ public final class Bookmark {
     public String name = "Untitled bookmark";
     public String note = "";
     public String dimension = "minecraft:overworld";
-    public String gradient = "none";
+    public String gradient = Gradient.NONE.key;
     public double x;
     public double y;
     public double z;
@@ -35,8 +35,10 @@ public final class Bookmark {
 
     public Component displayName() {
         String value = name.isBlank() ? "Untitled bookmark" : name;
-        if (!hasGradient()) return Component.literal(value);
-        return gradientText(value, packedColor(gradientStart()), packedColor(gradientEnd()));
+        Gradient style = currentGradient();
+        return style == Gradient.NONE
+                ? Component.literal(value)
+                : gradientText(value, style.start, style.end);
     }
 
     public static Component gradientText(String value, int startColor, int endColor) {
@@ -51,72 +53,25 @@ public final class Bookmark {
     }
 
     public boolean hasGradient() {
-        return gradientStart() != null;
-    }
-
-    private String gradientKey() {
-        return gradient == null ? "none" : gradient.trim().toLowerCase(Locale.ROOT);
+        return currentGradient() != Gradient.NONE;
     }
 
     public String gradientLabel() {
-        return switch (gradientKey()) {
-            case "black" -> "Black";
-            case "red" -> "Red gradient";
-            case "yellow" -> "Yellow gradient";
-            case "blue" -> "Blue gradient";
-            case "orange" -> "Orange gradient";
-            case "purple" -> "Purple gradient";
-            case "green" -> "Green gradient";
-            case "pink" -> "Pink gradient";
-            default -> "No gradient";
-        };
+        return currentGradient().label;
     }
 
+    /** Advances to the next gradient in definition order, wrapping back to NONE. */
     public void cycleGradient() {
-        String[] gradients = {"none", "red", "yellow", "blue", "orange", "purple", "black", "green", "pink"};
-        for (int i = 0; i < gradients.length; i++) {
-            if (gradients[i].equals(gradient)) {
-                gradient = gradients[(i + 1) % gradients.length];
-                return;
-            }
-        }
-        gradient = gradients[0];
+        Gradient[] values = Gradient.values();
+        gradient = values[(currentGradient().ordinal() + 1) % values.length].key;
     }
 
-    private int[] gradientStart() {
-        return switch (gradientKey()) {
-            case "black" -> new int[]{0, 0, 0};
-            case "red" -> new int[]{255, 85, 85};
-            case "yellow" -> new int[]{255, 255, 85};
-            case "blue" -> new int[]{85, 255, 255};
-            case "orange" -> new int[]{255, 170, 0};
-            case "purple" -> new int[]{255, 85, 255};
-            case "green" -> new int[]{85, 255, 85};
-            case "pink" -> new int[]{255, 153, 204};
-            default -> null;
-        };
-    }
-
-    private int[] gradientEnd() {
-        return switch (gradientKey()) {
-            case "black" -> new int[]{0, 0, 0};
-            case "red" -> new int[]{170, 0, 0};
-            case "yellow" -> new int[]{255, 170, 0};
-            case "blue" -> new int[]{85, 85, 255};
-            case "orange" -> new int[]{170, 55, 0};
-            case "purple" -> new int[]{170, 0, 170};
-            case "green" -> new int[]{0, 170, 0};
-            case "pink" -> new int[]{255, 51, 136};
-            default -> null;
-        };
+    private Gradient currentGradient() {
+        return Gradient.fromKey(gradient);
     }
 
     private static int interpolate(int start, int end, float progress) {
         return Math.round(start + (end - start) * progress);
-    }
-
-    private static int packedColor(int[] color) {
-        return (color[0] << 16) | (color[1] << 8) | color[2];
     }
 
     private static int interpolateColor(int start, int end, float progress) {
@@ -124,5 +79,38 @@ public final class Bookmark {
         int green = interpolate((start >> 8) & 0xFF, (end >> 8) & 0xFF, progress);
         int blue = interpolate(start & 0xFF, end & 0xFF, progress);
         return (red << 16) | (green << 8) | blue;
+    }
+
+    /** Named gradient styles: save key, display label, and packed 0xRRGGBB colors. */
+    private enum Gradient {
+        NONE("none", "No gradient", -1, -1),
+        RED("red", "Red gradient", 0xFF5555, 0xAA0000),
+        YELLOW("yellow", "Yellow gradient", 0xFFFF55, 0xFFAA00),
+        BLUE("blue", "Blue gradient", 0x55FFFF, 0x5555FF),
+        ORANGE("orange", "Orange gradient", 0xFFAA00, 0xAA3700),
+        PURPLE("purple", "Purple gradient", 0xFF55FF, 0xAA00AA),
+        BLACK("black", "Black", 0x000000, 0x000000),
+        GREEN("green", "Green gradient", 0x55FF55, 0x00AA00),
+        PINK("pink", "Pink gradient", 0xFF99CC, 0xFF3388);
+
+        final String key;
+        final String label;
+        final int start;
+        final int end;
+
+        Gradient(String key, String label, int start, int end) {
+            this.key = key;
+            this.label = label;
+            this.start = start;
+            this.end = end;
+        }
+
+        static Gradient fromKey(String raw) {
+            String normalized = raw == null ? NONE.key : raw.trim().toLowerCase(Locale.ROOT);
+            for (Gradient candidate : values()) {
+                if (candidate.key.equals(normalized)) return candidate;
+            }
+            return NONE;
+        }
     }
 }
