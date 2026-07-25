@@ -18,6 +18,9 @@ All notable changes to the mod are documented here.
 - Added native Book and Quill icons to the add-bookmark buttons.
 - Added a compact Ender Pearl teleport button with a tooltip.
 - Newly created and saved bookmark coordinates are rounded to two decimal places for X, Y, and Z.
+- Added a centered mod title to the bookmark manager.
+- Added purpose tooltips to bookmark manager and editor controls.
+- Added an explicit delete confirmation that warns deletion cannot be undone.
 
 ### Tracking
 

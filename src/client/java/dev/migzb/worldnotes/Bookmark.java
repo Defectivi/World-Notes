@@ -60,7 +60,6 @@ public final class Bookmark {
         return currentGradient().label;
     }
 
-    /** Advances to the next gradient in definition order, wrapping back to NONE. */
     public void cycleGradient() {
         Gradient[] values = Gradient.values();
         gradient = values[(currentGradient().ordinal() + 1) % values.length].key;
@@ -81,7 +80,6 @@ public final class Bookmark {
         return (red << 16) | (green << 8) | blue;
     }
 
-    /** Named gradient styles: save key, display label, and packed 0xRRGGBB colors. */
     private enum Gradient {
         NONE("none", "No gradient", -1, -1),
         RED("red", "Red gradient", 0xFF5555, 0xAA0000),

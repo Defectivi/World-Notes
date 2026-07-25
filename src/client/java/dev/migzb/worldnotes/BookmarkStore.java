@@ -29,7 +29,6 @@ public final class BookmarkStore {
             List<Bookmark> loaded = GSON.fromJson(Files.readString(FILE, StandardCharsets.UTF_8), LIST_TYPE);
             if (loaded != null) BOOKMARKS.addAll(loaded);
         } catch (IOException | RuntimeException ignored) {
-            // A broken local file must not prevent Minecraft from starting.
         }
     }
 

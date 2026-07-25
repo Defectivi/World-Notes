@@ -4,6 +4,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.network.chat.Component;
 
 public final class BookmarkEditorScreen extends Screen {
@@ -47,12 +48,14 @@ public final class BookmarkEditorScreen extends Screen {
             dimensionIndex = (dimensionIndex + 1) % DIMENSIONS.length;
             minecraft.gui.setScreen(new BookmarkEditorScreen(parent, copyFromFields()));
         }).bounds(left, 95, 200, 20).build());
+        dimension.setTooltip(Tooltip.create(Component.translatable("worldnotes.dimension.tooltip")));
         dimension.active = !readOnly;
         Button color = addRenderableWidget(Button.builder(Component.literal("Name color: " + bookmark.gradientLabel()), button -> {
             copyFromFields();
             bookmark.cycleGradient();
             minecraft.gui.setScreen(new BookmarkEditorScreen(parent, bookmark));
         }).bounds(left, 175, 200, 20).build());
+        color.setTooltip(Tooltip.create(Component.translatable("worldnotes.color.tooltip")));
         color.active = !readOnly;
         boolean tracked = WorldNotesClient.isTracked(bookmark);
         boolean canTrack = WorldNotesClient.canTrack(bookmark);
@@ -67,14 +70,13 @@ public final class BookmarkEditorScreen extends Screen {
                 .bounds(left, 150, 200, 20).build());
         tracking.active = canTrack;
         Button save = addRenderableWidget(Button.builder(Component.translatable("worldnotes.save"), button -> save())
+                .tooltip(Tooltip.create(Component.translatable("worldnotes.save.tooltip")))
                 .bounds(left, height - 45, 64, 20).build());
-        Button delete = addRenderableWidget(Button.builder(Component.translatable("worldnotes.delete"), button -> {
-            if (WorldNotesClient.isTracked(bookmark)) WorldNotesClient.stopTracking();
-            BookmarkStore.delete(bookmark);
-            parent.rebuild();
-        })
+        Button delete = addRenderableWidget(Button.builder(Component.translatable("worldnotes.delete"), button -> confirmDelete())
+                .tooltip(Tooltip.create(Component.translatable("worldnotes.delete.tooltip")))
                 .bounds(left + 68, height - 45, 64, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("worldnotes.cancel"), button -> minecraft.gui.setScreen(parent))
+                .tooltip(Tooltip.create(Component.translatable("worldnotes.cancel.tooltip")))
                 .bounds(left + 136, height - 45, 64, 20).build());
         save.active = !readOnly;
         delete.active = !readOnly;
@@ -117,6 +119,21 @@ public final class BookmarkEditorScreen extends Screen {
             WorldNotesClient.track(saved);
         }
         minecraft.gui.setScreen(new BookmarkEditorScreen(parent, bookmark, readOnly));
+    }
+
+    private void confirmDelete() {
+        minecraft.gui.setScreen(new ConfirmScreen(confirmed -> {
+            if (confirmed) {
+                if (WorldNotesClient.isTracked(bookmark)) WorldNotesClient.stopTracking();
+                BookmarkStore.delete(bookmark);
+                parent.rebuild();
+            } else {
+                minecraft.gui.setScreen(this);
+            }
+        }, Component.translatable("worldnotes.delete_confirm.title"),
+                Component.translatable("worldnotes.delete_confirm.message", bookmark.displayName()),
+                Component.translatable("worldnotes.delete_confirm.delete"),
+                Component.translatable("worldnotes.delete_confirm.cancel")));
     }
 
     private static double number(String value, double fallback) {

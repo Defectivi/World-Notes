@@ -5,7 +5,6 @@ import net.minecraft.network.chat.Component;
 
 import java.util.Locale;
 
-/** Draws the always-visible, client-only location and compass display. */
 public final class WorldNotesHud {
     private static final int PANEL = 0xA0101010;
     private static final int WHITE = 0xFFFFFFFF;
@@ -26,12 +25,10 @@ public final class WorldNotesHud {
                 + "  Y: " + minecraft.player.getBlockY()
                 + "  Z: " + minecraft.player.getBlockZ();
 
-        // Compact coordinate panel in the upper-left corner.
         graphics.fill(4, 4, 174, 34, PANEL);
         graphics.text(minecraft.font, dimension, 9, 8, WHITE, true);
         graphics.text(minecraft.font, coordinates, 9, 20, WHITE, true);
 
-        // Day counter in the lower-left corner. A Minecraft day is 24,000 ticks.
         long day = Math.floorDiv(minecraft.level.getOverworldClockTime(), 24000L);
         String dayLabel = "Day: " + day;
         int dayWidth = minecraft.font.width(dayLabel);
@@ -39,7 +36,6 @@ public final class WorldNotesHud {
         graphics.fill(4, bottom - 22, 13 + dayWidth, bottom - 4, PANEL);
         graphics.text(minecraft.font, dayLabel, 9, bottom - 18, WHITE, true);
 
-        // One clear cardinal direction in the upper centre of the screen.
         int center = minecraft.getWindow().getGuiScaledWidth() / 2;
         int direction = directionIndex(minecraft.player.getYRot());
         String label = directionName(direction);
@@ -91,12 +87,11 @@ public final class WorldNotesHud {
     }
 
     private static int directionIndex(float yaw) {
-        // Minecraft yaw: 0 = south, 90 = west, +/-180 = north, -90 = east.
         return switch (Math.floorMod(Math.round(yaw / 90.0f), 4)) {
-            case 0 -> 3; // South
-            case 1 -> 0; // West
-            case 2 -> 1; // North
-            default -> 2; // East
+            case 0 -> 3;
+            case 1 -> 0;
+            case 2 -> 1;
+            default -> 2;
         };
     }
 
