@@ -1,12 +1,12 @@
 # World Notes & Coordinates
 
-A client-side Fabric mod for Minecraft Java 26.2. The latest release is **0.1.3**.
+A client-side Fabric mod for Minecraft Java 26.2. The latest release is **0.1.3-beta**.
 
 Press **B** to open the bookmark manager. The keybind can be changed in **Settings -> Controls** under the **World Notes & Coordinates** category.
 
 ## Version history
 
-### 0.1.3 - Interface, gradients, and world profiles
+### 0.1.3-beta - Interface, gradients, and world profiles
 
 #### Bookmark interface
 
@@ -44,7 +44,7 @@ Press **B** to open the bookmark manager. The keybind can be changed in **Settin
 
 - The B keybind is registered under the World Notes category and can be changed in Minecraft’s Controls settings.
 - The supplied PNG is configured as the mod icon.
-- Version `0.1.3` is declared through Gradle and Fabric metadata for correct Modrinth identification.
+- Version `0.1.3-beta` is declared through Gradle and Fabric metadata for correct Modrinth prerelease identification.
 
 ### 0.1.2 - Bookmark tracking
 
@@ -76,4 +76,3 @@ Bookmark data is stored locally at:
 ```
 
 See [CHANGELOG.md](CHANGELOG.md) for the complete project history.
-

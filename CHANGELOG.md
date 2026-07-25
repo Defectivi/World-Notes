@@ -2,7 +2,7 @@
 
 All notable changes to the mod are documented here.
 
-## 0.1.3
+## 0.1.3-beta
 
 ### Bookmark interface
 
@@ -49,16 +49,16 @@ All notable changes to the mod are documented here.
 ### Assets and versioning
 
 - Added the supplied PNG as the mod icon.
-- Updated the Modrinth/Fabric metadata version to `0.1.3`.
+- Updated the Modrinth/Fabric metadata version to `0.1.3-beta`.
 
-## 0.1.2
+## 0.1.2-beta
 
 - Added client-side bookmark tracking.
 - Added direction and block-distance guidance for tracked coordinates.
 - Added tracked bookmark names and dimensions to the HUD.
 - Replaced world-space markers with the tracking interface.
 
-## 0.1.1
+## 0.1.1-beta
 
 - Added the live coordinate HUD.
 - Added a cardinal-direction HUD display.
