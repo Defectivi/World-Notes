@@ -2,6 +2,10 @@
 
 All notable changes to the mod are documented here.
 
+## 0.1.4-beta - Coming soon
+
+This release is planned and not yet available.
+
 ## 0.1.3-beta
 
 ### Bookmark interface

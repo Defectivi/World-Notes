@@ -1,79 +1,36 @@
 # World Notes & Coordinates
 
-A client-side Fabric mod for Minecraft Java 26.2. The latest release is **0.1.3-beta**.
+A client-side Fabric bookmark manager for Minecraft Java 26.2.
 
-Press **B** to open the bookmark manager. The keybind can be changed in **Settings -> Controls** under the **World Notes & Coordinates** category.
+Press **B** to open the bookmark manager. The keybind can be changed in Minecraft's Controls settings.
+
+## Current release: 0.1.3-beta
+
+- Create bookmarks at the player's current position or enter coordinates manually.
+- Store a name, optional note, dimension, and coordinates rounded to two decimal places.
+- Track one bookmark per world with direction, distance, and destination dimension guidance.
+- View bookmark details separately from editing.
+- Use dimension filters for Overworld, Nether, End, or all dimensions.
+- Use native Minecraft icons for adding, editing, and teleporting bookmarks.
+- Teleport controls respect the player's command permissions and provide confirmation messages.
+- Choose black, red, yellow, blue, orange, purple, green, or pink name colors and gradients.
+- View dimension-specific colors and backgrounds throughout the interface.
+- Bookmarks are separated between singleplayer worlds.
+- Delete actions require confirmation because they cannot be undone.
 
 ## Version history
 
-### 0.1.3-beta - Interface, gradients, and world profiles
+### 0.1.4-beta - Coming soon
 
-#### Bookmark interface
+Planned release; details will be announced.
 
-- Bookmark cards display the name, optional player note, coordinates, and dimension on separate lines.
-- Newly created and saved bookmark coordinates are rounded to two decimal places for X, Y, and Z.
-- Selecting a bookmark opens read-only details.
-- A separate Book icon opens the editable bookmark screen.
-- A Nether Star appears beside each bookmark name.
-- Cards expand when names or notes need additional lines.
-- Cards use dimension-themed backgrounds:
-  - Overworld: dirt-brown
-  - Nether: netherrack-red
-  - End: endstone-gray
-- Add-current-position and add-manual-bookmark buttons use native Book and Quill icons.
-- Teleport uses a compact Ender Pearl button with a tooltip.
+### 0.1.3-beta
 
-#### Colors and gradients
+Introduced the redesigned bookmark interface, editable name colors, dimension styling, world-separated bookmarks, permission-aware teleporting, custom teleport confirmations, tooltips, and irreversible-delete confirmation.
 
-- Bookmark names support editable black, red, yellow, blue, orange, purple, green, and pink styles.
-- Dimension labels use gradients throughout the HUD, tracking panel, filters, and bookmark cards:
-  - Overworld: green
-  - Nether: red
-  - End: purple
-  - All Dimensions: cyan
-- Stored gradient values are normalized so capitalization and whitespace do not prevent rendering.
+### 0.1.2-beta
 
-#### World profiles and permissions
+Introduced single-bookmark tracking with direction, distance, target dimension, and tracked bookmark name guidance.
 
-- Singleplayer bookmarks are separated by each world’s actual save path.
-- Existing bookmarks from the previous world-name profile format are migrated automatically.
-- Teleport buttons are disabled when the player lacks the required permission.
-- Disabled teleport buttons explain the required permission when hovered.
-- Successful teleports display a custom confirmation containing the colored bookmark name, coordinates, and dimension.
+See [CHANGELOG.md](CHANGELOG.md) for the complete release history.
 
-#### Settings and assets
-
-- The B keybind is registered under the World Notes category and can be changed in Minecraft’s Controls settings.
-- The supplied PNG is configured as the mod icon.
-- Version `0.1.3-beta` is declared through Gradle and Fabric metadata for correct Modrinth prerelease identification.
-
-### 0.1.2 - Bookmark tracking
-
-- Added Track and Stop tracking controls to bookmark details and editing screens.
-- Only one bookmark can be tracked at a time within a world.
-- Disabled Track buttons explain when another bookmark is already active.
-- Replaced world-space coordinate markers with a tracking HUD.
-- Tracking displays:
-  - Tracked bookmark name
-  - Direction, including diagonal directions
-  - Remaining distance in blocks
-  - Destination dimension
-- Tracking is isolated between worlds.
-
-## Building
-
-Install **JDK 25+**, then run:
-
-```powershell
-.\gradlew.bat build
-```
-
-The finished mod JAR is placed in `build/libs`.
-
-Bookmark data is stored locally at:
-
-```text
-.minecraft/config/worldnotes/bookmarks.json
-```
-
-See [CHANGELOG.md](CHANGELOG.md) for the complete project history.
