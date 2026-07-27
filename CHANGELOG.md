@@ -2,9 +2,19 @@
 
 All notable changes to the mod are documented here.
 
-## 0.1.4-beta - Coming soon
+## 0.1.4-beta
 
-This release is planned and not yet available.
+### Hidden bookmarks
+
+- Added a checkbox in the bookmark editor to hide a bookmark from the main list.
+- Added a Barrier button to open hidden bookmarks.
+- Added dimension filtering to the hidden-bookmarks view.
+- Added editing support for hidden bookmarks.
+- Added a Night Vision button to unhide bookmarks.
+- Added confirmation text: "Are you sure you want to unhide this Bookmark?"
+- Disabled the hide option while editing a bookmark from the hidden-bookmarks view.
+- Replaced the unhide potion bottle with the Night Vision effect icon.
+- Removed HUD background panels for cleaner text-only navigation, coordinate, dimension, tracking, and day displays.
 
 ## 0.1.3-beta
 

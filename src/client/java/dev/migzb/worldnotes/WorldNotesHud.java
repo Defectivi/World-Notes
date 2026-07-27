@@ -6,7 +6,6 @@ import net.minecraft.network.chat.Component;
 import java.util.Locale;
 
 public final class WorldNotesHud {
-    private static final int PANEL = 0xA0101010;
     private static final int WHITE = 0xFFFFFFFF;
     private static final int NORTH = 0xFF62B6FF;
     private static final int EAST = 0xFFFFCC4D;
@@ -25,23 +24,18 @@ public final class WorldNotesHud {
                 + "  Y: " + minecraft.player.getBlockY()
                 + "  Z: " + minecraft.player.getBlockZ();
 
-        graphics.fill(4, 4, 174, 34, PANEL);
         graphics.text(minecraft.font, dimension, 9, 8, WHITE, true);
         graphics.text(minecraft.font, coordinates, 9, 20, WHITE, true);
 
         long day = Math.floorDiv(minecraft.level.getOverworldClockTime(), 24000L);
         String dayLabel = "Day: " + day;
-        int dayWidth = minecraft.font.width(dayLabel);
         int bottom = minecraft.getWindow().getGuiScaledHeight();
-        graphics.fill(4, bottom - 22, 13 + dayWidth, bottom - 4, PANEL);
         graphics.text(minecraft.font, dayLabel, 9, bottom - 18, WHITE, true);
 
         int center = minecraft.getWindow().getGuiScaledWidth() / 2;
         int direction = directionIndex(minecraft.player.getYRot());
         String label = directionName(direction);
         int labelWidth = minecraft.font.width(label);
-        int left = center - labelWidth / 2 - 8;
-        graphics.fill(left, 4, left + labelWidth + 16, 22, PANEL);
         graphics.text(minecraft.font, label, center - labelWidth / 2, 8, directionColor(direction), true);
 
         renderTracking(graphics, minecraft);
@@ -70,7 +64,6 @@ public final class WorldNotesHud {
                 minecraft.font.width(dimension))) + 12;
         int right = minecraft.getWindow().getGuiScaledWidth() - 4;
         int left = right - width;
-        graphics.fill(left, 26, right, 70, PANEL);
         graphics.text(minecraft.font, title, left + 6, 30, WHITE, true);
         graphics.text(minecraft.font, destination, left + 6, 43, WHITE, true);
         graphics.text(minecraft.font, dimension, left + 6, 56, WHITE, true);

@@ -4,51 +4,69 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.client.renderer.RenderPipelines;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public final class BookmarkScreen extends Screen {
+    private static final Identifier NIGHT_VISION_EFFECT = Identifier.parse("minecraft:textures/mob_effect/night_vision.png");
     private static final int PAGE_SIZE = 2;
     private static final int CARD_WIDTH = 235;
     private static final int MIN_CARD_HEIGHT = 54;
     private static final int ROW_GAP = 4;
     private static final int CONTENT_WIDTH = 205;
     private static final int ACTION_SIZE = 20;
-    private static final int FIRST_ROW_Y = 85;
+    private static final int MAIN_FIRST_ROW_Y = 85;
+    private static final int HIDDEN_FIRST_ROW_Y = 60;
+    private final boolean hiddenView;
     private int page;
     private int filter;
 
     public BookmarkScreen() {
-        this(0, 0);
+        this(0, 0, false);
     }
 
-    private BookmarkScreen(int page, int filter) {
-        super(Component.translatable("worldnotes.title"));
+    private BookmarkScreen(int page, int filter, boolean hiddenView) {
+        super(Component.translatable(hiddenView ? "worldnotes.hidden.title" : "worldnotes.title"));
         this.page = page;
         this.filter = filter;
+        this.hiddenView = hiddenView;
+    }
+
+    static BookmarkScreen hiddenScreen() {
+        return new BookmarkScreen(0, 0, true);
     }
 
     @Override
     protected void init() {
         int center = width / 2;
-        addRenderableWidget(Button.builder(Component.literal("   ").append(Component.translatable("worldnotes.add_current")), button -> addCurrent())
-                .tooltip(Tooltip.create(Component.translatable("worldnotes.add_current.tooltip")))
-                .bounds(center - 155, 30, 150, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("   ").append(Component.translatable("worldnotes.add_manual")), button ->
-                minecraft.gui.setScreen(new BookmarkEditorScreen(this, new Bookmark())))
-                .tooltip(Tooltip.create(Component.translatable("worldnotes.add_manual.tooltip")))
-                .bounds(center + 5, 30, 150, 20).build());
+        int filterY = hiddenView ? 30 : 55;
+        if (!hiddenView) {
+            addRenderableWidget(Button.builder(Component.literal("   ").append(Component.translatable("worldnotes.add_current")), button -> addCurrent())
+                    .tooltip(Tooltip.create(Component.translatable("worldnotes.add_current.tooltip")))
+                    .bounds(center - 155, 30, 150, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("   ").append(Component.translatable("worldnotes.add_manual")), button ->
+                    minecraft.gui.setScreen(new BookmarkEditorScreen(this, new Bookmark())))
+                    .tooltip(Tooltip.create(Component.translatable("worldnotes.add_manual.tooltip")))
+                    .bounds(center + 5, 30, 150, 20).build());
+            Button hidden = addRenderableWidget(Button.builder(Component.empty(), button -> minecraft.gui.setScreen(hiddenScreen()))
+                    .tooltip(Tooltip.create(Component.translatable("worldnotes.hidden.tooltip")))
+                    .bounds(4, height - 45, ACTION_SIZE, ACTION_SIZE).build());
+            hidden.active = BookmarkStore.forProfile(WorldNotesClient.profile(minecraft)).stream().anyMatch(bookmark -> bookmark.hidden);
+        }
         addRenderableWidget(Button.builder(filterComponent(), button -> {
             filter = (filter + 1) % DimensionStyle.VALUES.length;
             rebuild();
         }).tooltip(Tooltip.create(Component.translatable("worldnotes.filter.tooltip")))
-                .bounds(center - 155, 55, 310, 20).build());
+                .bounds(center - 155, filterY, 310, 20).build());
         buildRows();
         addRenderableWidget(Button.builder(Component.literal("<"), button -> { page--; rebuild(); })
                 .tooltip(Tooltip.create(Component.translatable("worldnotes.previous_page.tooltip")))
@@ -57,8 +75,10 @@ public final class BookmarkScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal(">"), button -> { page++; rebuild(); })
                 .tooltip(Tooltip.create(Component.translatable("worldnotes.next_page.tooltip")))
                 .bounds(center + 120, height - 45, 35, 20).build()).active = page < pageCount - 1;
-        addRenderableWidget(Button.builder(Component.translatable("gui.done"), button -> onClose())
-                .tooltip(Tooltip.create(Component.translatable("worldnotes.done.tooltip")))
+        addRenderableWidget(Button.builder(Component.translatable(hiddenView ? "gui.back" : "gui.done"), button -> {
+            if (hiddenView) minecraft.gui.setScreen(new BookmarkScreen());
+            else onClose();
+        }).tooltip(Tooltip.create(Component.translatable(hiddenView ? "worldnotes.back.tooltip" : "worldnotes.done.tooltip")))
                 .bounds(center - 50, height - 45, 100, 20).build());
     }
 
@@ -73,13 +93,19 @@ public final class BookmarkScreen extends Screen {
                             minecraft.gui.setScreen(new BookmarkEditorScreen(this, row.bookmark())))
                     .tooltip(Tooltip.create(Component.translatable("worldnotes.edit")))
                     .bounds(center + 85, row.actionY(), ACTION_SIZE, ACTION_SIZE).build());
-            Component teleportTooltip = hasTeleportCommand()
-                    ? Component.translatable("worldnotes.teleport")
-                    : Component.translatable("worldnotes.teleport_no_permission");
-            Button teleport = addRenderableWidget(Button.builder(Component.empty(), button -> teleport(row.bookmark()))
-                    .tooltip(Tooltip.create(teleportTooltip))
-                    .bounds(center + 109, row.actionY(), ACTION_SIZE, ACTION_SIZE).build());
-            teleport.active = hasTeleportCommand();
+            if (hiddenView) {
+                addRenderableWidget(Button.builder(Component.empty(), button -> confirmUnhide(row.bookmark()))
+                        .tooltip(Tooltip.create(Component.translatable("worldnotes.unhide.tooltip")))
+                        .bounds(center + 109, row.actionY(), ACTION_SIZE, ACTION_SIZE).build());
+            } else {
+                Component teleportTooltip = hasTeleportCommand()
+                        ? Component.translatable("worldnotes.teleport")
+                        : Component.translatable("worldnotes.teleport_no_permission");
+                Button teleport = addRenderableWidget(Button.builder(Component.empty(), button -> teleport(row.bookmark()))
+                        .tooltip(Tooltip.create(teleportTooltip))
+                        .bounds(center + 109, row.actionY(), ACTION_SIZE, ACTION_SIZE).build());
+                teleport.active = hasTeleportCommand();
+            }
         }
     }
 
@@ -89,8 +115,11 @@ public final class BookmarkScreen extends Screen {
 
         int center = width / 2;
         graphics.centeredText(font, getTitle(), center, 10, 0xFFFFFFFF);
-        graphics.fakeItem(new ItemStack(Items.WRITABLE_BOOK), center - 151, 32);
-        graphics.fakeItem(new ItemStack(Items.WRITABLE_BOOK), center + 9, 32);
+        if (!hiddenView) {
+            graphics.fakeItem(new ItemStack(Items.WRITABLE_BOOK), center - 151, 32);
+            graphics.fakeItem(new ItemStack(Items.WRITABLE_BOOK), center + 9, 32);
+            graphics.fakeItem(new ItemStack(Items.BARRIER), 6, height - 43);
+        }
 
         for (RowLayout row : currentPageLayout()) {
             Bookmark bookmark = row.bookmark();
@@ -100,16 +129,23 @@ public final class BookmarkScreen extends Screen {
                     DimensionStyle.tint(bookmark.dimension));
             graphics.fakeItem(new ItemStack(Items.NETHER_STAR), center - 151, row.y() + 3);
             graphics.fakeItem(new ItemStack(Items.BOOK), center + 87, row.actionY() + 2);
-            graphics.fakeItem(new ItemStack(Items.ENDER_PEARL), center + 111, row.actionY() + 2);
+            if (hiddenView) {
+                graphics.blit(RenderPipelines.GUI_TEXTURED, NIGHT_VISION_EFFECT,
+                        center + 111, row.actionY() + 2, 0, 0, 18, 18, 18, 18);
+            } else {
+                graphics.fakeItem(new ItemStack(Items.ENDER_PEARL), center + 111, row.actionY() + 2);
+            }
 
             textY = drawWrapped(graphics, bookmark.displayName(), textX, textY, 0xFFFFFFFF);
-            if (!bookmark.note.isBlank()) {
-                textY = drawWrapped(graphics, Component.literal(bookmark.note), textX, textY, 0xFFCCCCCC);
-            }
+            if (!bookmark.note.isBlank()) textY = drawWrapped(graphics, Component.literal(bookmark.note), textX, textY, 0xFFCCCCCC);
             graphics.text(font, coordinates(bookmark), textX, textY, 0xFFFFFFFF, true);
             textY += 12;
             graphics.text(font, dimensionComponent(bookmark.dimension), textX, textY, 0xFFFFFFFF, true);
         }
+    }
+
+    boolean isHiddenView() {
+        return hiddenView;
     }
 
     private int drawWrapped(GuiGraphicsExtractor graphics, Component text, int x, int y, int color) {
@@ -127,12 +163,11 @@ public final class BookmarkScreen extends Screen {
         List<Bookmark> bookmarks = filtered();
         int first = page * PAGE_SIZE;
         List<RowLayout> rows = new ArrayList<>(PAGE_SIZE);
-        int y = FIRST_ROW_Y;
+        int y = hiddenView ? HIDDEN_FIRST_ROW_Y : MAIN_FIRST_ROW_Y;
         for (int row = 0; row < PAGE_SIZE && first + row < bookmarks.size(); row++) {
             Bookmark bookmark = bookmarks.get(first + row);
             int height = cardHeight(bookmark);
-            int actionY = y + (height - ACTION_SIZE) / 2;
-            rows.add(new RowLayout(bookmark, y, height, actionY));
+            rows.add(new RowLayout(bookmark, y, height, y + (height - ACTION_SIZE) / 2));
             y += height + ROW_GAP;
         }
         return rows;
@@ -148,6 +183,7 @@ public final class BookmarkScreen extends Screen {
         String profile = WorldNotesClient.profile(Minecraft.getInstance());
         DimensionStyle style = DimensionStyle.VALUES[filter];
         return BookmarkStore.forProfile(profile).stream()
+                .filter(bookmark -> bookmark.hidden == hiddenView)
                 .filter(bookmark -> style == DimensionStyle.ALL || style.key.equals(bookmark.dimension))
                 .toList();
     }
@@ -179,9 +215,24 @@ public final class BookmarkScreen extends Screen {
         onClose();
     }
 
+    private void confirmUnhide(Bookmark bookmark) {
+        minecraft.gui.setScreen(new ConfirmScreen(confirmed -> {
+            if (confirmed) {
+                bookmark.hidden = false;
+                BookmarkStore.save(bookmark);
+                rebuild();
+            } else {
+                minecraft.gui.setScreen(this);
+            }
+        }, Component.translatable("worldnotes.unhide_confirm.title"),
+                Component.translatable("worldnotes.unhide_confirm.message"),
+                Component.translatable("worldnotes.unhide_confirm.confirm"),
+                Component.translatable("worldnotes.unhide_confirm.cancel")));
+    }
+
     void rebuild() {
         page = Math.max(0, page);
-        minecraft.gui.setScreen(new BookmarkScreen(page, filter));
+        minecraft.gui.setScreen(new BookmarkScreen(page, filter, hiddenView));
     }
 
     static String friendly(String dimension) {
@@ -207,7 +258,6 @@ public final class BookmarkScreen extends Screen {
         END("minecraft:the_end", "The End", 0x555F5B3F, 0xFF55FF, 0xAA00AA);
 
         static final DimensionStyle[] VALUES = values();
-
         final String key;
         final String label;
         final int tint;
@@ -223,9 +273,7 @@ public final class BookmarkScreen extends Screen {
         }
 
         private static DimensionStyle fromKey(String key) {
-            for (DimensionStyle style : VALUES) {
-                if (style.key.equals(key)) return style;
-            }
+            for (DimensionStyle style : VALUES) if (style.key.equals(key)) return style;
             return null;
         }
 
@@ -236,8 +284,7 @@ public final class BookmarkScreen extends Screen {
 
         static Component component(String dimension) {
             DimensionStyle style = fromKey(dimension);
-            return style != null
-                    ? Bookmark.gradientText(style.label, style.gradientStart, style.gradientEnd)
+            return style != null ? Bookmark.gradientText(style.label, style.gradientStart, style.gradientEnd)
                     : Component.literal(dimension);
         }
 

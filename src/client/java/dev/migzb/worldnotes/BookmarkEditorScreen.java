@@ -1,6 +1,7 @@
 package dev.migzb.worldnotes;
 
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
@@ -17,6 +18,7 @@ public final class BookmarkEditorScreen extends Screen {
     private EditBox x;
     private EditBox y;
     private EditBox z;
+    private Checkbox hidden;
     private int dimensionIndex;
 
     public BookmarkEditorScreen(BookmarkScreen parent, Bookmark bookmark) {
@@ -36,9 +38,9 @@ public final class BookmarkEditorScreen extends Screen {
         int left = width / 2 - 100;
         name = field(left, 40, 200, bookmark.name, "Name");
         note = field(left, 70, 200, bookmark.note, "Note (optional)");
-        x = field(left, 125, 62, Double.toString(bookmark.x), "X");
-        y = field(left + 69, 125, 62, Double.toString(bookmark.y), "Y");
-        z = field(left + 138, 125, 62, Double.toString(bookmark.z), "Z");
+        x = field(left, 135, 62, Double.toString(bookmark.x), "X");
+        y = field(left + 69, 135, 62, Double.toString(bookmark.y), "Y");
+        z = field(left + 138, 135, 62, Double.toString(bookmark.z), "Z");
         name.setEditable(!readOnly);
         note.setEditable(!readOnly);
         x.setEditable(!readOnly);
@@ -50,11 +52,18 @@ public final class BookmarkEditorScreen extends Screen {
         }).bounds(left, 95, 200, 20).build());
         dimension.setTooltip(Tooltip.create(Component.translatable("worldnotes.dimension.tooltip")));
         dimension.active = !readOnly;
+        hidden = addRenderableWidget(Checkbox.builder(Component.translatable("worldnotes.hide_from_main"), font)
+                .pos(left, 115)
+                .selected(bookmark.hidden)
+                .tooltip(Tooltip.create(Component.translatable("worldnotes.hide_from_main.tooltip")))
+                .onValueChange((checkbox, selected) -> { })
+                .build());
+        hidden.active = !readOnly && !parent.isHiddenView();
         Button color = addRenderableWidget(Button.builder(Component.literal("Name color: " + bookmark.gradientLabel()), button -> {
             copyFromFields();
             bookmark.cycleGradient();
             minecraft.gui.setScreen(new BookmarkEditorScreen(parent, bookmark));
-        }).bounds(left, 175, 200, 20).build());
+        }).bounds(left, 185, 200, 20).build());
         color.setTooltip(Tooltip.create(Component.translatable("worldnotes.color.tooltip")));
         color.active = !readOnly;
         boolean tracked = WorldNotesClient.isTracked(bookmark);
@@ -67,17 +76,17 @@ public final class BookmarkEditorScreen extends Screen {
         Button tracking = addRenderableWidget(Button.builder(
                         Component.literal(tracked ? "Stop tracking" : "Track"), button -> toggleTracking())
                 .tooltip(Tooltip.create(trackingTooltip))
-                .bounds(left, 150, 200, 20).build());
+                .bounds(left, 160, 200, 20).build());
         tracking.active = canTrack;
         Button save = addRenderableWidget(Button.builder(Component.translatable("worldnotes.save"), button -> save())
                 .tooltip(Tooltip.create(Component.translatable("worldnotes.save.tooltip")))
-                .bounds(left, height - 45, 64, 20).build());
+                .bounds(left, height - 25, 64, 20).build());
         Button delete = addRenderableWidget(Button.builder(Component.translatable("worldnotes.delete"), button -> confirmDelete())
                 .tooltip(Tooltip.create(Component.translatable("worldnotes.delete.tooltip")))
-                .bounds(left + 68, height - 45, 64, 20).build());
+                .bounds(left + 68, height - 25, 64, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("worldnotes.cancel"), button -> minecraft.gui.setScreen(parent))
                 .tooltip(Tooltip.create(Component.translatable("worldnotes.cancel.tooltip")))
-                .bounds(left + 136, height - 45, 64, 20).build());
+                .bounds(left + 136, height - 25, 64, 20).build());
         save.active = !readOnly;
         delete.active = !readOnly;
     }
@@ -97,6 +106,7 @@ public final class BookmarkEditorScreen extends Screen {
         bookmark.x = Bookmark.roundToHundredth(number(x.getValue(), bookmark.x));
         bookmark.y = Bookmark.roundToHundredth(number(y.getValue(), bookmark.y));
         bookmark.z = Bookmark.roundToHundredth(number(z.getValue(), bookmark.z));
+        bookmark.hidden = hidden.selected();
         return bookmark;
     }
 
