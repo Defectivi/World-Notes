@@ -15,6 +15,9 @@ All notable changes to the mod are documented here.
 - Disabled the hide option while editing a bookmark from the hidden-bookmarks view.
 - Replaced the unhide potion bottle with the Night Vision effect icon.
 - Removed HUD background panels for cleaner text-only navigation, coordinate, dimension, tracking, and day displays.
+- Declared Fabric compatibility with Minecraft Client 26.1 through 26.2.
+- Fixed the bookmark menu crashing on Minecraft 26.1 when opening it with the B key.
+- Fixed cancelling a new bookmark after tracking it from saving the bookmark unintentionally, including repeated tracking attempts.
 
 ## 0.1.3-beta
 

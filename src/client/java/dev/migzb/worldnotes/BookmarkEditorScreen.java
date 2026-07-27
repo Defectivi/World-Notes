@@ -13,6 +13,7 @@ public final class BookmarkEditorScreen extends Screen {
     private final BookmarkScreen parent;
     private final Bookmark bookmark;
     private final boolean readOnly;
+    private final boolean createdHere;
     private EditBox name;
     private EditBox note;
     private EditBox x;
@@ -26,10 +27,15 @@ public final class BookmarkEditorScreen extends Screen {
     }
 
     public BookmarkEditorScreen(BookmarkScreen parent, Bookmark bookmark, boolean readOnly) {
+        this(parent, bookmark, readOnly, !BookmarkStore.contains(bookmark));
+    }
+
+    private BookmarkEditorScreen(BookmarkScreen parent, Bookmark bookmark, boolean readOnly, boolean createdHere) {
         super(Component.literal(readOnly ? "Bookmark details" : "Edit bookmark"));
         this.parent = parent;
         this.bookmark = bookmark;
         this.readOnly = readOnly;
+        this.createdHere = createdHere;
         for (int i = 0; i < DIMENSIONS.length; i++) if (DIMENSIONS[i].equals(bookmark.dimension)) dimensionIndex = i;
     }
 
@@ -48,7 +54,7 @@ public final class BookmarkEditorScreen extends Screen {
         z.setEditable(!readOnly);
         Button dimension = addRenderableWidget(Button.builder(Component.literal("Dimension: " + BookmarkScreen.friendly(DIMENSIONS[dimensionIndex])), button -> {
             dimensionIndex = (dimensionIndex + 1) % DIMENSIONS.length;
-            minecraft.gui.setScreen(new BookmarkEditorScreen(parent, copyFromFields()));
+            WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(parent, copyFromFields(), readOnly, createdHere));
         }).bounds(left, 95, 200, 20).build());
         dimension.setTooltip(Tooltip.create(Component.translatable("worldnotes.dimension.tooltip")));
         dimension.active = !readOnly;
@@ -62,7 +68,7 @@ public final class BookmarkEditorScreen extends Screen {
         Button color = addRenderableWidget(Button.builder(Component.literal("Name color: " + bookmark.gradientLabel()), button -> {
             copyFromFields();
             bookmark.cycleGradient();
-            minecraft.gui.setScreen(new BookmarkEditorScreen(parent, bookmark));
+            WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(parent, bookmark, readOnly, createdHere));
         }).bounds(left, 185, 200, 20).build());
         color.setTooltip(Tooltip.create(Component.translatable("worldnotes.color.tooltip")));
         color.active = !readOnly;
@@ -84,7 +90,7 @@ public final class BookmarkEditorScreen extends Screen {
         Button delete = addRenderableWidget(Button.builder(Component.translatable("worldnotes.delete"), button -> confirmDelete())
                 .tooltip(Tooltip.create(Component.translatable("worldnotes.delete.tooltip")))
                 .bounds(left + 68, height - 25, 64, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("worldnotes.cancel"), button -> minecraft.gui.setScreen(parent))
+        addRenderableWidget(Button.builder(Component.translatable("worldnotes.cancel"), button -> cancel())
                 .tooltip(Tooltip.create(Component.translatable("worldnotes.cancel.tooltip")))
                 .bounds(left + 136, height - 25, 64, 20).build());
         save.active = !readOnly;
@@ -125,25 +131,33 @@ public final class BookmarkEditorScreen extends Screen {
             Bookmark saved = copyFromFields();
             if (saved.name.isBlank()) saved.name = "Untitled bookmark";
             saved.profile = WorldNotesClient.profile(minecraft);
-            BookmarkStore.save(saved);
+            if (!createdHere) BookmarkStore.save(saved);
             WorldNotesClient.track(saved);
         }
-        minecraft.gui.setScreen(new BookmarkEditorScreen(parent, bookmark, readOnly));
+        WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(parent, bookmark, readOnly, createdHere));
     }
 
     private void confirmDelete() {
-        minecraft.gui.setScreen(new ConfirmScreen(confirmed -> {
+        WorldNotesClient.setScreen(minecraft, new ConfirmScreen(confirmed -> {
             if (confirmed) {
                 if (WorldNotesClient.isTracked(bookmark)) WorldNotesClient.stopTracking();
                 BookmarkStore.delete(bookmark);
                 parent.rebuild();
             } else {
-                minecraft.gui.setScreen(this);
+                WorldNotesClient.setScreen(minecraft, this);
             }
         }, Component.translatable("worldnotes.delete_confirm.title"),
                 Component.translatable("worldnotes.delete_confirm.message", bookmark.displayName()),
                 Component.translatable("worldnotes.delete_confirm.delete"),
                 Component.translatable("worldnotes.delete_confirm.cancel")));
+    }
+
+    private void cancel() {
+        if (createdHere) {
+            if (WorldNotesClient.isTracked(bookmark)) WorldNotesClient.stopTracking();
+            if (BookmarkStore.contains(bookmark)) BookmarkStore.delete(bookmark);
+        }
+        WorldNotesClient.setScreen(minecraft, parent);
     }
 
     private static double number(String value, double fallback) {

@@ -48,6 +48,10 @@ public final class BookmarkStore {
         persist();
     }
 
+    public static boolean contains(Bookmark bookmark) {
+        return BOOKMARKS.stream().anyMatch(existing -> existing.id.equals(bookmark.id));
+    }
+
     public static void migrateProfile(String oldProfile, String newProfile) {
         boolean changed = false;
         for (Bookmark bookmark : BOOKMARKS) {

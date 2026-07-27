@@ -54,10 +54,10 @@ public final class BookmarkScreen extends Screen {
                     .tooltip(Tooltip.create(Component.translatable("worldnotes.add_current.tooltip")))
                     .bounds(center - 155, 30, 150, 20).build());
             addRenderableWidget(Button.builder(Component.literal("   ").append(Component.translatable("worldnotes.add_manual")), button ->
-                    minecraft.gui.setScreen(new BookmarkEditorScreen(this, new Bookmark())))
+                    WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(this, new Bookmark())))
                     .tooltip(Tooltip.create(Component.translatable("worldnotes.add_manual.tooltip")))
                     .bounds(center + 5, 30, 150, 20).build());
-            Button hidden = addRenderableWidget(Button.builder(Component.empty(), button -> minecraft.gui.setScreen(hiddenScreen()))
+            Button hidden = addRenderableWidget(Button.builder(Component.empty(), button -> WorldNotesClient.setScreen(minecraft, hiddenScreen()))
                     .tooltip(Tooltip.create(Component.translatable("worldnotes.hidden.tooltip")))
                     .bounds(4, height - 45, ACTION_SIZE, ACTION_SIZE).build());
             hidden.active = BookmarkStore.forProfile(WorldNotesClient.profile(minecraft)).stream().anyMatch(bookmark -> bookmark.hidden);
@@ -76,7 +76,7 @@ public final class BookmarkScreen extends Screen {
                 .tooltip(Tooltip.create(Component.translatable("worldnotes.next_page.tooltip")))
                 .bounds(center + 120, height - 45, 35, 20).build()).active = page < pageCount - 1;
         addRenderableWidget(Button.builder(Component.translatable(hiddenView ? "gui.back" : "gui.done"), button -> {
-            if (hiddenView) minecraft.gui.setScreen(new BookmarkScreen());
+            if (hiddenView) WorldNotesClient.setScreen(minecraft, new BookmarkScreen());
             else onClose();
         }).tooltip(Tooltip.create(Component.translatable(hiddenView ? "worldnotes.back.tooltip" : "worldnotes.done.tooltip")))
                 .bounds(center - 50, height - 45, 100, 20).build());
@@ -86,11 +86,11 @@ public final class BookmarkScreen extends Screen {
         int center = width / 2;
         for (RowLayout row : currentPageLayout()) {
             addRenderableWidget(Button.builder(Component.empty(), button ->
-                    minecraft.gui.setScreen(new BookmarkEditorScreen(this, row.bookmark(), true)))
+                    WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(this, row.bookmark(), true)))
                     .tooltip(Tooltip.create(Component.translatable("worldnotes.view.tooltip")))
                     .bounds(center - 155, row.y(), CARD_WIDTH, row.height()).build());
             addRenderableWidget(Button.builder(Component.empty(), button ->
-                            minecraft.gui.setScreen(new BookmarkEditorScreen(this, row.bookmark())))
+                            WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(this, row.bookmark())))
                     .tooltip(Tooltip.create(Component.translatable("worldnotes.edit")))
                     .bounds(center + 85, row.actionY(), ACTION_SIZE, ACTION_SIZE).build());
             if (hiddenView) {
@@ -195,7 +195,7 @@ public final class BookmarkScreen extends Screen {
                 Bookmark.roundToHundredth(minecraft.player.getX()),
                 Bookmark.roundToHundredth(minecraft.player.getY()),
                 Bookmark.roundToHundredth(minecraft.player.getZ()));
-        minecraft.gui.setScreen(new BookmarkEditorScreen(this, bookmark));
+        WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(this, bookmark));
     }
 
     private boolean hasTeleportCommand() {
@@ -216,13 +216,13 @@ public final class BookmarkScreen extends Screen {
     }
 
     private void confirmUnhide(Bookmark bookmark) {
-        minecraft.gui.setScreen(new ConfirmScreen(confirmed -> {
+        WorldNotesClient.setScreen(minecraft, new ConfirmScreen(confirmed -> {
             if (confirmed) {
                 bookmark.hidden = false;
                 BookmarkStore.save(bookmark);
                 rebuild();
             } else {
-                minecraft.gui.setScreen(this);
+                WorldNotesClient.setScreen(minecraft, this);
             }
         }, Component.translatable("worldnotes.unhide_confirm.title"),
                 Component.translatable("worldnotes.unhide_confirm.message"),
@@ -232,7 +232,7 @@ public final class BookmarkScreen extends Screen {
 
     void rebuild() {
         page = Math.max(0, page);
-        minecraft.gui.setScreen(new BookmarkScreen(page, filter, hiddenView));
+        WorldNotesClient.setScreen(minecraft, new BookmarkScreen(page, filter, hiddenView));
     }
 
     static String friendly(String dimension) {

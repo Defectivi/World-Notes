@@ -1,6 +1,6 @@
 # World Notes & Coordinates
 
-A client-side Fabric bookmark manager for Minecraft Java 26.2.
+A client-side Fabric bookmark manager for Minecraft Java 26.1.x and 26.2.
 
 Press **B** to open the bookmark manager. The keybind can be changed in Minecraft's Controls settings.
 
