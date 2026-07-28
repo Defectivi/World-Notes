@@ -14,6 +14,7 @@ public final class Bookmark {
     public String dimension = "minecraft:overworld";
     public String gradient = Gradient.NONE.key;
     public boolean hidden;
+    public boolean favorite;
     public double x;
     public double y;
     public double z;

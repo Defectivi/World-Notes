@@ -4,7 +4,9 @@ A client-side Fabric bookmark manager for Minecraft Java 26.1.x and 26.2.
 
 Press **B** to open the bookmark manager. The keybind can be changed in Minecraft's Controls settings.
 
-## Current release: 0.1.4-beta
+## Current version: 0.1.5-dev
+
+This branch is for development and testing purposes and should not be considered a stable release.
 
 - Create bookmarks at the player's current position or enter coordinates manually.
 - Store a name, optional note, dimension, and coordinates rounded to two decimal places.
@@ -20,6 +22,10 @@ Press **B** to open the bookmark manager. The keybind can be changed in Minecraf
 - Hide bookmarks from the main list and manage them from the hidden-bookmarks view.
 
 ## Version history
+
+### 0.1.5-dev
+
+Development branch for ongoing changes and testing.
 
 ### 0.1.4-beta
 

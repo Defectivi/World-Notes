@@ -2,6 +2,15 @@
 
 All notable changes to the mod are documented here.
 
+## 0.1.5-dev
+
+This is a development branch. The `0.1.5-dev` version is intended for development and testing purposes and is not a stable release.
+
+### Favorite bookmarks
+
+- Added a separate Favorites view above Hidden Bookmarks.
+- Added favorite bookmark support with the same filtering, details, editing, and teleport actions as the main and hidden-bookmark views.
+
 ## 0.1.4-beta
 
 ### Hidden bookmarks

@@ -27,29 +27,37 @@ public final class BookmarkScreen extends Screen {
     private static final int MAIN_FIRST_ROW_Y = 85;
     private static final int HIDDEN_FIRST_ROW_Y = 60;
     private final boolean hiddenView;
+    private final boolean favoriteView;
     private int page;
     private int filter;
 
     public BookmarkScreen() {
-        this(0, 0, false);
+        this(0, 0, false, false);
     }
 
-    private BookmarkScreen(int page, int filter, boolean hiddenView) {
-        super(Component.translatable(hiddenView ? "worldnotes.hidden.title" : "worldnotes.title"));
+    private BookmarkScreen(int page, int filter, boolean hiddenView, boolean favoriteView) {
+        super(Component.translatable(hiddenView ? "worldnotes.hidden.title"
+                : favoriteView ? "worldnotes.favorite.title" : "worldnotes.title"));
         this.page = page;
         this.filter = filter;
         this.hiddenView = hiddenView;
+        this.favoriteView = favoriteView;
     }
 
     static BookmarkScreen hiddenScreen() {
-        return new BookmarkScreen(0, 0, true);
+        return new BookmarkScreen(0, 0, true, false);
+    }
+
+    static BookmarkScreen favoriteScreen() {
+        return new BookmarkScreen(0, 0, false, true);
     }
 
     @Override
     protected void init() {
         int center = width / 2;
-        int filterY = hiddenView ? 30 : 55;
-        if (!hiddenView) {
+        boolean separateView = hiddenView || favoriteView;
+        int filterY = separateView ? 30 : 55;
+        if (!separateView) {
             addRenderableWidget(Button.builder(Component.literal("   ").append(Component.translatable("worldnotes.add_current")), button -> addCurrent())
                     .tooltip(Tooltip.create(Component.translatable("worldnotes.add_current.tooltip")))
                     .bounds(center - 155, 30, 150, 20).build());
@@ -57,6 +65,9 @@ public final class BookmarkScreen extends Screen {
                     WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(this, new Bookmark())))
                     .tooltip(Tooltip.create(Component.translatable("worldnotes.add_manual.tooltip")))
                     .bounds(center + 5, 30, 150, 20).build());
+            Button favorite = addRenderableWidget(Button.builder(Component.empty(), button -> WorldNotesClient.setScreen(minecraft, favoriteScreen()))
+                    .tooltip(Tooltip.create(Component.translatable("worldnotes.favorite.tooltip")))
+                    .bounds(4, height - 69, ACTION_SIZE, ACTION_SIZE).build());
             Button hidden = addRenderableWidget(Button.builder(Component.empty(), button -> WorldNotesClient.setScreen(minecraft, hiddenScreen()))
                     .tooltip(Tooltip.create(Component.translatable("worldnotes.hidden.tooltip")))
                     .bounds(4, height - 45, ACTION_SIZE, ACTION_SIZE).build());
@@ -75,10 +86,10 @@ public final class BookmarkScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal(">"), button -> { page++; rebuild(); })
                 .tooltip(Tooltip.create(Component.translatable("worldnotes.next_page.tooltip")))
                 .bounds(center + 120, height - 45, 35, 20).build()).active = page < pageCount - 1;
-        addRenderableWidget(Button.builder(Component.translatable(hiddenView ? "gui.back" : "gui.done"), button -> {
-            if (hiddenView) WorldNotesClient.setScreen(minecraft, new BookmarkScreen());
+        addRenderableWidget(Button.builder(Component.translatable(separateView ? "gui.back" : "gui.done"), button -> {
+            if (hiddenView || favoriteView) WorldNotesClient.setScreen(minecraft, new BookmarkScreen());
             else onClose();
-        }).tooltip(Tooltip.create(Component.translatable(hiddenView ? "worldnotes.back.tooltip" : "worldnotes.done.tooltip")))
+        }).tooltip(Tooltip.create(Component.translatable(separateView ? "worldnotes.back.tooltip" : "worldnotes.done.tooltip")))
                 .bounds(center - 50, height - 45, 100, 20).build());
     }
 
@@ -118,6 +129,7 @@ public final class BookmarkScreen extends Screen {
         if (!hiddenView) {
             graphics.fakeItem(new ItemStack(Items.WRITABLE_BOOK), center - 151, 32);
             graphics.fakeItem(new ItemStack(Items.WRITABLE_BOOK), center + 9, 32);
+            graphics.fakeItem(new ItemStack(Items.NETHER_STAR), 6, height - 67);
             graphics.fakeItem(new ItemStack(Items.BARRIER), 6, height - 43);
         }
 
@@ -163,7 +175,7 @@ public final class BookmarkScreen extends Screen {
         List<Bookmark> bookmarks = filtered();
         int first = page * PAGE_SIZE;
         List<RowLayout> rows = new ArrayList<>(PAGE_SIZE);
-        int y = hiddenView ? HIDDEN_FIRST_ROW_Y : MAIN_FIRST_ROW_Y;
+        int y = (hiddenView || favoriteView) ? HIDDEN_FIRST_ROW_Y : MAIN_FIRST_ROW_Y;
         for (int row = 0; row < PAGE_SIZE && first + row < bookmarks.size(); row++) {
             Bookmark bookmark = bookmarks.get(first + row);
             int height = cardHeight(bookmark);
@@ -183,7 +195,7 @@ public final class BookmarkScreen extends Screen {
         String profile = WorldNotesClient.profile(Minecraft.getInstance());
         DimensionStyle style = DimensionStyle.VALUES[filter];
         return BookmarkStore.forProfile(profile).stream()
-                .filter(bookmark -> bookmark.hidden == hiddenView)
+                .filter(bookmark -> hiddenView ? bookmark.hidden : favoriteView ? bookmark.favorite : !bookmark.hidden)
                 .filter(bookmark -> style == DimensionStyle.ALL || style.key.equals(bookmark.dimension))
                 .toList();
     }
@@ -232,7 +244,7 @@ public final class BookmarkScreen extends Screen {
 
     void rebuild() {
         page = Math.max(0, page);
-        WorldNotesClient.setScreen(minecraft, new BookmarkScreen(page, filter, hiddenView));
+        WorldNotesClient.setScreen(minecraft, new BookmarkScreen(page, filter, hiddenView, favoriteView));
     }
 
     static String friendly(String dimension) {
