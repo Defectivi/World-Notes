@@ -22,11 +22,14 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
 
+def modVersion = project.version
+def minecraftDependency = project.minecraft_dependency
+
 processResources {
-    inputs.property "version", project.version
-    inputs.property "minecraft_dependency", project.minecraft_dependency
+    inputs.property "version", modVersion
+    inputs.property "minecraft_dependency", minecraftDependency
     filesMatching("fabric.mod.json") {
-        expand "version": project.version, "minecraft_dependency": project.minecraft_dependency
+        expand "version": modVersion, "minecraft_dependency": minecraftDependency
     }
 }
 

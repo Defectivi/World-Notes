@@ -11,6 +11,7 @@ This is the main branch and the stable release line for `0.1.4-stable`.
 - Fixed bookmark pagination showing an empty page after deleting the final bookmark on a later page.
 - Ignored non-finite coordinate input instead of saving invalid teleport coordinates.
 - Hardened bookmark sorting and updates against incomplete records in the saved JSON file.
+- Removed a Gradle configuration warning caused by accessing project properties during task execution.
 
 ## 0.1.4-beta
 
