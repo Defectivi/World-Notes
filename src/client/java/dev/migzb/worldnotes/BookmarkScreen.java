@@ -49,6 +49,8 @@ public final class BookmarkScreen extends Screen {
     protected void init() {
         int center = width / 2;
         int filterY = hiddenView ? 30 : 55;
+        int pageCount = Math.max(1, (filtered().size() + PAGE_SIZE - 1) / PAGE_SIZE);
+        page = Math.min(page, pageCount - 1);
         if (!hiddenView) {
             addRenderableWidget(Button.builder(Component.literal("   ").append(Component.translatable("worldnotes.add_current")), button -> addCurrent())
                     .tooltip(Tooltip.create(Component.translatable("worldnotes.add_current.tooltip")))
@@ -71,7 +73,6 @@ public final class BookmarkScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("<"), button -> { page--; rebuild(); })
                 .tooltip(Tooltip.create(Component.translatable("worldnotes.previous_page.tooltip")))
                 .bounds(center - 155, height - 45, 35, 20).build()).active = page > 0;
-        int pageCount = Math.max(1, (filtered().size() + PAGE_SIZE - 1) / PAGE_SIZE);
         addRenderableWidget(Button.builder(Component.literal(">"), button -> { page++; rebuild(); })
                 .tooltip(Tooltip.create(Component.translatable("worldnotes.next_page.tooltip")))
                 .bounds(center + 120, height - 45, 35, 20).build()).active = page < pageCount - 1;

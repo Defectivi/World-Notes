@@ -2,6 +2,16 @@
 
 All notable changes to the mod are documented here.
 
+## 0.1.4-stable
+
+This is the main branch and the stable release line for `0.1.4-stable`.
+
+### Bug fixes
+
+- Fixed bookmark pagination showing an empty page after deleting the final bookmark on a later page.
+- Ignored non-finite coordinate input instead of saving invalid teleport coordinates.
+- Hardened bookmark sorting and updates against incomplete records in the saved JSON file.
+
 ## 0.1.4-beta
 
 ### Hidden bookmarks
