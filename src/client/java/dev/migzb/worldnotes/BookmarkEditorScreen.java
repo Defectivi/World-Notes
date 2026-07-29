@@ -170,6 +170,11 @@ public final class BookmarkEditorScreen extends Screen {
     }
 
     private static double number(String value, double fallback) {
-        try { return Double.parseDouble(value); } catch (NumberFormatException ignored) { return fallback; }
+        try {
+            double parsed = Double.parseDouble(value);
+            return Double.isFinite(parsed) ? parsed : fallback;
+        } catch (NumberFormatException ignored) {
+            return fallback;
+        }
     }
 }

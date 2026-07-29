@@ -11,6 +11,12 @@ This is a development branch. The `0.1.5-dev` version is intended for developmen
 - Added a separate Favorites view above Hidden Bookmarks.
 - Added favorite bookmark support with the same filtering, details, editing, and teleport actions as the main and hidden-bookmark views.
 
+### Bug fixes
+
+- Fixed bookmark pagination showing an empty page after deleting the final bookmark on a later page.
+- Ignored non-finite coordinate input instead of saving invalid teleport coordinates.
+- Hardened bookmark sorting and updates against incomplete records in the saved JSON file.
+
 ## 0.1.4-beta
 
 ### Hidden bookmarks

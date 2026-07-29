@@ -34,22 +34,23 @@ public final class BookmarkStore {
 
     public static List<Bookmark> forProfile(String profile) {
         return BOOKMARKS.stream().filter(bookmark -> profile.equals(bookmark.profile))
-                .sorted(Comparator.comparing(bookmark -> bookmark.name.toLowerCase())).toList();
+                .sorted(Comparator.comparing(bookmark -> bookmark.name == null
+                        ? "" : bookmark.name.toLowerCase(java.util.Locale.ROOT))).toList();
     }
 
     public static void save(Bookmark bookmark) {
-        BOOKMARKS.removeIf(existing -> existing.id.equals(bookmark.id));
+        BOOKMARKS.removeIf(existing -> sameId(existing, bookmark));
         BOOKMARKS.add(bookmark);
         persist();
     }
 
     public static void delete(Bookmark bookmark) {
-        BOOKMARKS.removeIf(existing -> existing.id.equals(bookmark.id));
+        BOOKMARKS.removeIf(existing -> sameId(existing, bookmark));
         persist();
     }
 
     public static boolean contains(Bookmark bookmark) {
-        return BOOKMARKS.stream().anyMatch(existing -> existing.id.equals(bookmark.id));
+        return BOOKMARKS.stream().anyMatch(existing -> sameId(existing, bookmark));
     }
 
     public static void migrateProfile(String oldProfile, String newProfile) {
@@ -68,5 +69,9 @@ public final class BookmarkStore {
             Files.createDirectories(FILE.getParent());
             Files.writeString(FILE, GSON.toJson(BOOKMARKS, LIST_TYPE), StandardCharsets.UTF_8);
         } catch (IOException ignored) { }
+    }
+
+    private static boolean sameId(Bookmark first, Bookmark second) {
+        return first != null && second != null && first.id != null && first.id.equals(second.id);
     }
 }
