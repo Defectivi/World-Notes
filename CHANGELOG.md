@@ -12,6 +12,8 @@ This is the main branch and the stable release line for `0.1.4-stable`.
 - Ignored non-finite coordinate input instead of saving invalid teleport coordinates.
 - Hardened bookmark sorting and updates against incomplete records in the saved JSON file.
 - Removed a Gradle configuration warning caused by accessing project properties during task execution.
+- Fixed the keybinding category displaying its translation key instead of its name.
+- Removed the Delete button while creating a new bookmark and moved Cancel into its place.
 
 ## 0.1.4-beta
 
