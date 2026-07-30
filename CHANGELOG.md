@@ -16,6 +16,8 @@ This is a development branch. The `0.1.5-dev` version is intended for developmen
 - Fixed bookmark pagination showing an empty page after deleting the final bookmark on a later page.
 - Ignored non-finite coordinate input instead of saving invalid teleport coordinates.
 - Hardened bookmark sorting and updates against incomplete records in the saved JSON file.
+- Fixed the keybinding category displaying its translation key instead of its name.
+- Removed the Delete button while creating a new bookmark and moved Cancel into its place.
 
 ## 0.1.4-beta
 

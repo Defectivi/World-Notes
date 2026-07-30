@@ -95,14 +95,18 @@ public final class BookmarkEditorScreen extends Screen {
         Button save = addRenderableWidget(Button.builder(Component.translatable("worldnotes.save"), button -> save())
                 .tooltip(Tooltip.create(Component.translatable("worldnotes.save.tooltip")))
                 .bounds(left, height - 25, 64, 20).build());
-        Button delete = addRenderableWidget(Button.builder(Component.translatable("worldnotes.delete"), button -> confirmDelete())
-                .tooltip(Tooltip.create(Component.translatable("worldnotes.delete.tooltip")))
-                .bounds(left + 68, height - 25, 64, 20).build());
+        Button delete = null;
+        if (!createdHere) {
+            delete = addRenderableWidget(Button.builder(Component.translatable("worldnotes.delete"), button -> confirmDelete())
+                    .tooltip(Tooltip.create(Component.translatable("worldnotes.delete.tooltip")))
+                    .bounds(left + 68, height - 25, 64, 20).build());
+        }
+        int cancelX = createdHere ? left + 68 : left + 136;
         addRenderableWidget(Button.builder(Component.translatable("worldnotes.cancel"), button -> cancel())
                 .tooltip(Tooltip.create(Component.translatable("worldnotes.cancel.tooltip")))
-                .bounds(left + 136, height - 25, 64, 20).build());
+                .bounds(cancelX, height - 25, 64, 20).build());
         save.active = !readOnly;
-        delete.active = !readOnly;
+        if (delete != null) delete.active = !readOnly;
     }
 
     private EditBox field(int x, int y, int width, String value, String hint) {
