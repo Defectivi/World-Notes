@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "worldnotes",
+  "version": "${version}",
+  "name": "World Notes & Coordinates",
+  "description": "Dimension-aware local coordinate bookmarks.",
+  "icon": "assets/worldnotes/icon.png",
+  "authors": ["Yuhzhua"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.migzb.worldnotes.WorldNotesClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "${minecraft_dependency}",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}
