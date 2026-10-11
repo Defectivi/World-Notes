@@ -2,6 +2,19 @@
 
 All notable changes to the mod are documented here.
 
+## 0.2.2-beta
+
+- Added bookmark search, responsive pagination, bounded previews, and empty/search result messages.
+- Added a deepslate and cartography background with consistent dimension-coloured panels and minimap framing.
+- Fixed draft edits leaking into saved entries, Escape skipping cancellation, and custom dimensions being reset by the editor.
+- Preserved text and coordinate drafts across window resizing; made validation and save failures visible.
+- Added transactional bookmark writes, previous-version backups, corruption recovery, and protection against overwriting unreadable data.
+- Fixed cross-world ID collisions, stale tracked entries after edits/deletion, unsafe dimension strings, numeric overflow, and surrogate splitting in gradients.
+- Replaced premature teleport-success messages with request messages and checked cross-dimension command availability.
+- Cached minimap marker lists and added gold edge markers for tracked destinations outside map coverage.
+- Added persistence regression tests on the Forge development classpath.
+- Added a batch build launcher for Windows installations where PowerShell script execution is disabled.
+
 ## 0.2.1-beta
 
 - Added a client-side Forge build for Minecraft 26.3 / Forge 66.0.10.

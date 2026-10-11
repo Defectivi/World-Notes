@@ -9,6 +9,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.Arrays;
+import java.util.List;
 
 /** Samples only chunks already received by the client, with a fixed amount of work per tick. */
 final class WorldNotesMinimap {
@@ -20,6 +21,9 @@ final class WorldNotesMinimap {
     private static ClientLevel level;
     private static int originX, originZ, cursor;
     private static boolean initialized;
+    private static List<Bookmark> markers = List.of();
+    private static String markerProfile;
+    private static long markerRevision = -1;
     private static final BlockPos.MutableBlockPos POSITION = new BlockPos.MutableBlockPos();
 
     private WorldNotesMinimap() { }
@@ -51,6 +55,12 @@ final class WorldNotesMinimap {
             return;
         }
         if (!settings.enabled) return;
+        String profile = WorldNotesClient.profile(client);
+        if (!profile.equals(markerProfile) || markerRevision != BookmarkStore.revision()) {
+            markers = BookmarkStore.forProfile(profile);
+            markerProfile = profile;
+            markerRevision = BookmarkStore.revision();
+        }
         int scale = settings.blocksPerPixel;
         int x = Math.floorDiv(client.player.getBlockX(), scale) * scale - GRID / 2 * scale;
         int z = Math.floorDiv(client.player.getBlockZ(), scale) * scale - GRID / 2 * scale;
@@ -90,7 +100,8 @@ final class WorldNotesMinimap {
     static void render(GuiGraphicsExtractor graphics, Minecraft client) {
         if (!visible(client) || !initialized || level != client.level) return;
         int left = client.getWindow().getGuiScaledWidth() - SIZE - 9, top = 18;
-        graphics.fill(left - 3, top - 3, left + SIZE + 3, top + SIZE + 14, 0xDD10151D);
+        WorldNotesTheme.panel(graphics, left - 3, top - 3, SIZE + 6, SIZE + 17,
+                WorldNotesTheme.dimensionAccent(WorldNotesClient.dimension(level)));
         for (int row = 0; row < GRID; row++) {
             for (int col = 0; col < GRID;) {
                 int color = COLORS[row * GRID + col], end = col + 1;
@@ -100,13 +111,20 @@ final class WorldNotesMinimap {
             }
         }
         String dimension = WorldNotesClient.dimension(level);
-        for (Bookmark bookmark : BookmarkStore.forProfile(WorldNotesClient.profile(client))) {
-            if (bookmark.hidden || !dimension.equals(bookmark.dimension)) continue;
+        for (Bookmark bookmark : markers) {
+            if (bookmark.hidden || !dimension.equals(bookmark.dimension) || WorldNotesClient.isTracked(bookmark)) continue;
             int x = mapCoordinate(bookmark.x, originX), z = mapCoordinate(bookmark.z, originZ);
             if (x < 2 || z < 2 || x >= SIZE - 2 || z >= SIZE - 2) continue;
-            int color = WorldNotesClient.isTracked(bookmark) ? 0xFFFFD34D : 0xFF6DE5FF;
+            int color = 0xFF6DE5FF;
             graphics.fill(left + x - 2, top + z - 2, left + x + 3, top + z + 3, 0xFF10151D);
             graphics.fill(left + x - 1, top + z - 1, left + x + 2, top + z + 2, color);
+        }
+        Bookmark target = WorldNotesClient.trackedBookmark(client);
+        if (target != null && !target.hidden && dimension.equals(target.dimension)) {
+            int x = Math.clamp(mapCoordinate(target.x, originX), 2, SIZE - 3);
+            int z = Math.clamp(mapCoordinate(target.z, originZ), 2, SIZE - 3);
+            graphics.fill(left + x - 2, top + z - 2, left + x + 3, top + z + 3, 0xFF10151D);
+            graphics.fill(left + x - 1, top + z - 1, left + x + 2, top + z + 2, WorldNotesTheme.ACCENT);
         }
         int px = mapCoordinate(client.player.getX(), originX), pz = mapCoordinate(client.player.getZ(), originZ);
         graphics.fill(left + px - 2, top + pz - 2, left + px + 3, top + pz + 3, 0xFF000000);

@@ -31,7 +31,25 @@ public final class Bookmark {
     }
 
     public static double roundToHundredth(double value) {
-        return Math.round(value * 100.0) / 100.0;
+        if (!Double.isFinite(value)) throw new IllegalArgumentException("Coordinates must be finite");
+        return java.math.BigDecimal.valueOf(value).setScale(2, java.math.RoundingMode.HALF_UP).doubleValue();
+    }
+
+    public Bookmark copy() {
+        Bookmark copy = new Bookmark(profile, name, note, dimension, x, y, z);
+        copy.id = id;
+        copy.gradient = gradient;
+        copy.hidden = hidden;
+        return copy;
+    }
+
+    public boolean validCoordinates() {
+        return Double.isFinite(x) && Double.isFinite(y) && Double.isFinite(z)
+                && Math.abs(x) < 30_000_000 && Math.abs(z) < 30_000_000 && Math.abs(y) < 20_000_000;
+    }
+
+    static boolean validDimension(String value) {
+        return value != null && value.matches("[a-z0-9_.-]+:[a-z0-9/._-]+");
     }
 
     public Component displayName() {
@@ -44,10 +62,11 @@ public final class Bookmark {
 
     public static Component gradientText(String value, int startColor, int endColor) {
         MutableComponent result = Component.empty();
-        for (int i = 0; i < value.length(); i++) {
-            float progress = value.length() <= 1 ? 0.0F : (float) i / (value.length() - 1);
+        int[] codePoints = value.codePoints().toArray();
+        for (int i = 0; i < codePoints.length; i++) {
+            float progress = codePoints.length <= 1 ? 0.0F : (float) i / (codePoints.length - 1);
             int color = interpolateColor(startColor, endColor, progress);
-            result = result.append(Component.literal(String.valueOf(value.charAt(i)))
+            result = result.append(Component.literal(new String(Character.toChars(codePoints[i])))
                     .withStyle(style -> style.withColor(color)));
         }
         return result;

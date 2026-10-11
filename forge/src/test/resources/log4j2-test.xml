@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <!-- Negative persistence tests intentionally exercise logged IO errors. -->
+    <Loggers>
+        <Logger name="worldnotes" level="OFF" additivity="false"/>
+        <Root level="WARN"/>
+    </Loggers>
+</Configuration>

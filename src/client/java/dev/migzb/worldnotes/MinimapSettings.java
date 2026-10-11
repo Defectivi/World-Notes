@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 
 final class MinimapSettings {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -32,10 +31,7 @@ final class MinimapSettings {
 
     void save() {
         try {
-            Files.createDirectories(FILE.getParent());
-            Path temporary = FILE.resolveSibling("minimap.json.tmp");
-            Files.writeString(temporary, GSON.toJson(this));
-            Files.move(temporary, FILE, StandardCopyOption.REPLACE_EXISTING);
+            AtomicFiles.write(FILE, GSON.toJson(this));
         } catch (Exception exception) {
             LoggerFactory.getLogger("worldnotes").warn("Unable to save minimap settings", exception);
         }

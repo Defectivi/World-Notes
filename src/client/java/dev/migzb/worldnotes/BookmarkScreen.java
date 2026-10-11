@@ -3,295 +3,227 @@ package dev.migzb.worldnotes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.client.renderer.RenderPipelines;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public final class BookmarkScreen extends Screen {
-    private static final Identifier NIGHT_VISION_EFFECT = Identifier.parse("minecraft:textures/mob_effect/night_vision.png");
-    private static final int PAGE_SIZE = 2;
-    private static final int CARD_WIDTH = 235;
-    private static final int MIN_CARD_HEIGHT = 54;
-    private static final int ROW_GAP = 4;
-    private static final int CONTENT_WIDTH = 205;
-    private static final int ACTION_SIZE = 20;
-    private static final int MAIN_FIRST_ROW_Y = 85;
-    private static final int HIDDEN_FIRST_ROW_Y = 60;
+    private static final String[] FILTERS = {"all", "minecraft:overworld", "minecraft:the_nether", "minecraft:the_end"};
     private final boolean hiddenView;
-    private int page;
-    private int filter;
+    private int page, filter, pageCount, left, panelWidth, cardWidth, cardHeight;
+    private String query;
+    private EditBox search;
+    private List<RowLayout> rows = List.of();
+    private final List<Button> cards = new ArrayList<>();
+    private Component error = Component.empty();
 
-    public BookmarkScreen() {
-        this(0, 0, false);
-    }
-
-    private BookmarkScreen(int page, int filter, boolean hiddenView) {
+    public BookmarkScreen() { this(0, 0, false, ""); }
+    private BookmarkScreen(int page, int filter, boolean hiddenView, String query) {
         super(Component.translatable(hiddenView ? "worldnotes.hidden.title" : "worldnotes.title"));
         this.page = page;
         this.filter = filter;
         this.hiddenView = hiddenView;
+        this.query = query;
     }
-
-    static BookmarkScreen hiddenScreen() {
-        return new BookmarkScreen(0, 0, true);
-    }
+    static BookmarkScreen hiddenScreen() { return new BookmarkScreen(0, 0, true, ""); }
 
     @Override
     protected void init() {
-        int center = width / 2;
-        int filterY = hiddenView ? 30 : 55;
-        int pageCount = Math.max(1, (filtered().size() + PAGE_SIZE - 1) / PAGE_SIZE);
-        page = Math.min(page, pageCount - 1);
+        panelWidth = Math.min(360, width - 16);
+        left = (width - panelWidth) / 2;
+        cardWidth = panelWidth - 52;
+        int firstRow = hiddenView ? 73 : 98;
+        int available = Math.max(33, height - 46 - firstRow);
+        cardHeight = Math.min(54, available);
+        int pageSize = Math.max(1, (available + 6) / (cardHeight + 6));
+        List<Bookmark> bookmarks = filtered();
+        pageCount = Math.max(1, (bookmarks.size() + pageSize - 1) / pageSize);
+        page = Math.max(0, Math.min(page, pageCount - 1));
+        List<RowLayout> layout = new ArrayList<>();
+        int first = page * pageSize;
+        for (int index = first; index < Math.min(first + pageSize, bookmarks.size()); index++)
+            layout.add(new RowLayout(bookmarks.get(index), firstRow + (index - first) * (cardHeight + 6)));
+        rows = List.copyOf(layout);
+        cards.clear();
         if (!hiddenView) {
-            addRenderableWidget(Button.builder(Component.literal("   ").append(Component.translatable("worldnotes.add_current")), button -> addCurrent())
-                    .tooltip(Tooltip.create(Component.translatable("worldnotes.add_current.tooltip")))
-                    .bounds(center - 155, 30, 150, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("   ").append(Component.translatable("worldnotes.add_manual")), button ->
+            int half = (panelWidth - 4) / 2;
+            addRenderableWidget(Button.builder(Component.translatable("worldnotes.add_current"), button -> addCurrent())
+                    .bounds(left, 28, half, 18).build());
+            addRenderableWidget(Button.builder(Component.translatable("worldnotes.add_manual"), button ->
                     WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(this, new Bookmark())))
-                    .tooltip(Tooltip.create(Component.translatable("worldnotes.add_manual.tooltip")))
-                    .bounds(center + 5, 30, 150, 20).build());
-            Button hidden = addRenderableWidget(Button.builder(Component.empty(), button -> WorldNotesClient.setScreen(minecraft, hiddenScreen()))
-                    .tooltip(Tooltip.create(Component.translatable("worldnotes.hidden.tooltip")))
-                    .bounds(4, height - 45, ACTION_SIZE, ACTION_SIZE).build());
-            hidden.active = BookmarkStore.forProfile(WorldNotesClient.profile(minecraft)).stream().anyMatch(bookmark -> bookmark.hidden);
+                    .bounds(left + half + 4, 28, half, 18).build());
         }
-        addRenderableWidget(Button.builder(filterComponent(), button -> {
-            filter = (filter + 1) % DimensionStyle.VALUES.length;
+        int filterY = hiddenView ? 27 : 52;
+        addRenderableWidget(Button.builder(Component.translatable("worldnotes.filter", dimensionComponent(FILTERS[filter])), button -> {
+            filter = (filter + 1) % FILTERS.length;
+            page = 0;
             rebuild();
-        }).tooltip(Tooltip.create(Component.translatable("worldnotes.filter.tooltip")))
-                .bounds(center - 155, filterY, 310, 20).build());
-        buildRows();
-        addRenderableWidget(Button.builder(Component.literal("<"), button -> { page--; rebuild(); })
-                .tooltip(Tooltip.create(Component.translatable("worldnotes.previous_page.tooltip")))
-                .bounds(center - 155, height - 45, 35, 20).build()).active = page > 0;
-        addRenderableWidget(Button.builder(Component.literal(">"), button -> { page++; rebuild(); })
-                .tooltip(Tooltip.create(Component.translatable("worldnotes.next_page.tooltip")))
-                .bounds(center + 120, height - 45, 35, 20).build()).active = page < pageCount - 1;
-        addRenderableWidget(Button.builder(Component.translatable(hiddenView ? "gui.back" : "gui.done"), button -> {
-            if (hiddenView) WorldNotesClient.setScreen(minecraft, new BookmarkScreen());
-            else onClose();
-        }).tooltip(Tooltip.create(Component.translatable(hiddenView ? "worldnotes.back.tooltip" : "worldnotes.done.tooltip")))
-                .bounds(center - 50, height - 45, 100, 20).build());
-    }
-
-    private void buildRows() {
-        int center = width / 2;
-        for (RowLayout row : currentPageLayout()) {
-            addRenderableWidget(Button.builder(Component.empty(), button ->
-                    WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(this, row.bookmark(), true)))
+        }).bounds(left, filterY, panelWidth, 18).build());
+        if (search == null) {
+            search = new EditBox(font, left + 1, filterY + 23, panelWidth - 2, 18, Component.translatable("worldnotes.search"));
+            search.setMaxLength(128);
+            search.setHint(Component.translatable("worldnotes.search"));
+            search.setValue(query);
+            search.setResponder(value -> {
+                query = value;
+                page = 0;
+                clearWidgets();
+                init();
+            });
+        } else {
+            search.setX(left + 1);
+            search.setY(filterY + 23);
+            search.setWidth(panelWidth - 2);
+        }
+        addRenderableWidget(search);
+        setInitialFocus(search);
+        for (RowLayout row : rows) {
+            Bookmark bookmark = row.bookmark();
+            cards.add(addRenderableWidget(Button.builder(bookmark.displayName(), button ->
+                    WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(this, bookmark, true)))
                     .tooltip(Tooltip.create(Component.translatable("worldnotes.view.tooltip")))
-                    .bounds(center - 155, row.y(), CARD_WIDTH, row.height()).build());
+                    .bounds(left, row.y(), cardWidth, cardHeight).build()));
+            int actionY = row.y() + (cardHeight - 20) / 2;
             addRenderableWidget(Button.builder(Component.empty(), button ->
-                            WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(this, row.bookmark())))
+                    WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(this, bookmark)))
+                    .createNarration(supplier -> Component.translatable("worldnotes.edit"))
                     .tooltip(Tooltip.create(Component.translatable("worldnotes.edit")))
-                    .bounds(center + 85, row.actionY(), ACTION_SIZE, ACTION_SIZE).build());
-            if (hiddenView) {
-                addRenderableWidget(Button.builder(Component.empty(), button -> confirmUnhide(row.bookmark()))
-                        .tooltip(Tooltip.create(Component.translatable("worldnotes.unhide.tooltip")))
-                        .bounds(center + 109, row.actionY(), ACTION_SIZE, ACTION_SIZE).build());
-            } else {
-                Component teleportTooltip = hasTeleportCommand()
-                        ? Component.translatable("worldnotes.teleport")
-                        : Component.translatable("worldnotes.teleport_no_permission");
-                Button teleport = addRenderableWidget(Button.builder(Component.empty(), button -> teleport(row.bookmark()))
-                        .tooltip(Tooltip.create(teleportTooltip))
-                        .bounds(center + 109, row.actionY(), ACTION_SIZE, ACTION_SIZE).build());
-                teleport.active = hasTeleportCommand();
+                    .bounds(left + cardWidth + 4, actionY, 20, 20).build());
+            if (hiddenView) addRenderableWidget(Button.builder(Component.empty(), button -> confirmUnhide(bookmark))
+                    .createNarration(supplier -> Component.translatable("worldnotes.unhide.tooltip"))
+                    .tooltip(Tooltip.create(Component.translatable("worldnotes.unhide.tooltip")))
+                    .bounds(left + cardWidth + 28, actionY, 20, 20).build());
+            else {
+                Button teleport = addRenderableWidget(Button.builder(Component.empty(), button -> teleport(bookmark))
+                        .createNarration(supplier -> Component.translatable("worldnotes.teleport"))
+                        .tooltip(Tooltip.create(Component.translatable(canTeleport(bookmark) ? "worldnotes.teleport" : "worldnotes.teleport_no_permission")))
+                        .bounds(left + cardWidth + 28, actionY, 20, 20).build());
+                teleport.active = canTeleport(bookmark);
             }
         }
+        int footer = height - 26;
+        if (!hiddenView) addRenderableWidget(Button.builder(Component.empty(), button ->
+                WorldNotesClient.setScreen(minecraft, hiddenScreen())).bounds(left, footer, 20, 20)
+                .createNarration(supplier -> Component.translatable("worldnotes.hidden.title"))
+                .tooltip(Tooltip.create(Component.translatable("worldnotes.hidden.tooltip"))).build());
+        addRenderableWidget(Button.builder(Component.literal("<"), button -> { page--; rebuild(); })
+                .bounds(left + 24, footer, 24, 20).build()).active = page > 0;
+        addRenderableWidget(Button.builder(Component.literal(">"), button -> { page++; rebuild(); })
+                .bounds(left + panelWidth - 24, footer, 24, 20).build()).active = page < pageCount - 1;
+        addRenderableWidget(Button.builder(Component.translatable(hiddenView ? "gui.back" : "gui.done"), button -> onClose())
+                .bounds(width / 2 - 40, footer, 80, 20).build());
+    }
+
+    private List<Bookmark> filtered() {
+        String needle = query.trim().toLowerCase(Locale.ROOT);
+        return BookmarkStore.forProfile(WorldNotesClient.profile(Minecraft.getInstance())).stream()
+                .filter(bookmark -> bookmark.hidden == hiddenView)
+                .filter(bookmark -> filter == 0 || FILTERS[filter].equals(bookmark.dimension))
+                .filter(bookmark -> needle.isEmpty() || (bookmark.name + " " + bookmark.note + " " + friendly(bookmark.dimension)
+                        + " " + coordinates(bookmark)).toLowerCase(Locale.ROOT).contains(needle)).toList();
+    }
+
+    @Override
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        WorldNotesTheme.background(graphics, width, height);
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-
-        int center = width / 2;
-        graphics.centeredText(font, getTitle(), center, 10, 0xFFFFFFFF);
-        if (!hiddenView) {
-            graphics.fakeItem(new ItemStack(Items.WRITABLE_BOOK), center - 151, 32);
-            graphics.fakeItem(new ItemStack(Items.WRITABLE_BOOK), center + 9, 32);
-            graphics.fakeItem(new ItemStack(Items.BARRIER), 6, height - 43);
-        }
-
-        for (RowLayout row : currentPageLayout()) {
+        graphics.nextStratum();
+        graphics.centeredText(font, getTitle(), width / 2, 10, WorldNotesTheme.TEXT);
+        for (int index = 0; index < rows.size(); index++) {
+            RowLayout row = rows.get(index);
             Bookmark bookmark = row.bookmark();
-            int textX = center - 133;
-            int textY = row.y() + 5;
-            graphics.fill(center - 155, row.y(), center - 155 + CARD_WIDTH, row.y() + row.height(),
-                    DimensionStyle.tint(bookmark.dimension));
-            graphics.fakeItem(new ItemStack(Items.NETHER_STAR), center - 151, row.y() + 3);
-            graphics.fakeItem(new ItemStack(Items.BOOK), center + 87, row.actionY() + 2);
-            if (hiddenView) {
-                graphics.blit(RenderPipelines.GUI_TEXTURED, NIGHT_VISION_EFFECT,
-                        center + 111, row.actionY() + 2, 0, 0, 18, 18, 18, 18);
-            } else {
-                graphics.fakeItem(new ItemStack(Items.ENDER_PEARL), center + 111, row.actionY() + 2);
+            int accent = WorldNotesClient.isTracked(bookmark) ? WorldNotesTheme.ACCENT : WorldNotesTheme.dimensionAccent(bookmark.dimension);
+            WorldNotesTheme.panel(graphics, left, row.y(), cardWidth, cardHeight, accent);
+            if (cards.get(index).isFocused() || mouseX >= left && mouseX < left + cardWidth && mouseY >= row.y() && mouseY < row.y() + cardHeight)
+                graphics.outline(left, row.y(), cardWidth, cardHeight, accent);
+            graphics.fakeItem(new ItemStack(WorldNotesClient.isTracked(bookmark) ? Items.COMPASS : Items.FILLED_MAP), left + 5, row.y() + 5);
+            int actionY = row.y() + (cardHeight - 20) / 2;
+            graphics.fakeItem(new ItemStack(Items.BOOK), left + cardWidth + 6, actionY + 2);
+            graphics.fakeItem(new ItemStack(hiddenView ? Items.ENDER_EYE : Items.ENDER_PEARL), left + cardWidth + 30, actionY + 2);
+            int textX = left + 25, textWidth = cardWidth - 31, y = row.y() + 5;
+            if ("black".equals(bookmark.gradient)) graphics.fill(textX - 1, y - 1, left + cardWidth - 5, y + 9, 0xFFCAD3DB);
+            graphics.text(font, font.split(bookmark.displayName(), textWidth).getFirst(), textX, y, WorldNotesTheme.TEXT, false);
+            y += 11;
+            if (cardHeight >= 50 && !bookmark.note.isBlank()) {
+                graphics.text(font, font.plainSubstrByWidth(bookmark.note, textWidth), textX, y, WorldNotesTheme.MUTED, false);
+                y += 11;
             }
-
-            textY = drawWrapped(graphics, bookmark.displayName(), textX, textY, 0xFFFFFFFF);
-            if (!bookmark.note.isBlank()) textY = drawWrapped(graphics, Component.literal(bookmark.note), textX, textY, 0xFFCCCCCC);
-            graphics.text(font, coordinates(bookmark), textX, textY, 0xFFFFFFFF, true);
-            textY += 12;
-            graphics.text(font, dimensionComponent(bookmark.dimension), textX, textY, 0xFFFFFFFF, true);
+            graphics.text(font, font.plainSubstrByWidth(coordinates(bookmark), textWidth), textX, y, WorldNotesTheme.TEXT, false);
+            graphics.text(font, font.split(dimensionComponent(bookmark.dimension), textWidth).getFirst(), textX, y + 11, accent, false);
         }
-    }
-
-    boolean isHiddenView() {
-        return hiddenView;
-    }
-
-    private int drawWrapped(GuiGraphicsExtractor graphics, Component text, int x, int y, int color) {
-        List<net.minecraft.util.FormattedCharSequence> lines = font.split(text, CONTENT_WIDTH);
-        for (net.minecraft.util.FormattedCharSequence line : lines) {
-            graphics.text(font, line, x, y, color, true);
-            y += 12;
+        if (!hiddenView) graphics.fakeItem(new ItemStack(Items.BARRIER), left + 2, height - 24);
+        if (rows.isEmpty()) {
+            var lines = font.split(Component.translatable(query.isBlank() ? "worldnotes.empty" : "worldnotes.no_results"), panelWidth - 8);
+            int firstRow = hiddenView ? 73 : 98;
+            int y = firstRow + Math.max(0, (height - 46 - firstRow - lines.size() * 11) / 2);
+            for (var line : lines) {
+                graphics.text(font, line, width / 2 - font.width(line) / 2, y, WorldNotesTheme.MUTED, false);
+                y += 11;
+            }
         }
-        return y;
+        Component footer = error.getString().isEmpty() ? Component.translatable("worldnotes.page", page + 1, pageCount) : error;
+        graphics.centeredText(font, footer, width / 2, height - 38, error.getString().isEmpty() ? WorldNotesTheme.MUTED : 0xFFFF8C83);
     }
 
-    private record RowLayout(Bookmark bookmark, int y, int height, int actionY) { }
-
-    private List<RowLayout> currentPageLayout() {
-        List<Bookmark> bookmarks = filtered();
-        int first = page * PAGE_SIZE;
-        List<RowLayout> rows = new ArrayList<>(PAGE_SIZE);
-        int y = hiddenView ? HIDDEN_FIRST_ROW_Y : MAIN_FIRST_ROW_Y;
-        for (int row = 0; row < PAGE_SIZE && first + row < bookmarks.size(); row++) {
-            Bookmark bookmark = bookmarks.get(first + row);
-            int height = cardHeight(bookmark);
-            rows.add(new RowLayout(bookmark, y, height, y + (height - ACTION_SIZE) / 2));
-            y += height + ROW_GAP;
-        }
-        return rows;
-    }
-
-    private int cardHeight(Bookmark bookmark) {
-        int lines = font.split(bookmark.displayName(), CONTENT_WIDTH).size() + 2;
-        if (!bookmark.note.isBlank()) lines += font.split(Component.literal(bookmark.note), CONTENT_WIDTH).size();
-        return Math.max(MIN_CARD_HEIGHT, lines * 12 + 8);
-    }
-
-    private List<Bookmark> filtered() {
-        String profile = WorldNotesClient.profile(Minecraft.getInstance());
-        DimensionStyle style = DimensionStyle.VALUES[filter];
-        return BookmarkStore.forProfile(profile).stream()
-                .filter(bookmark -> bookmark.hidden == hiddenView)
-                .filter(bookmark -> style == DimensionStyle.ALL || style.key.equals(bookmark.dimension))
-                .toList();
-    }
+    boolean isHiddenView() { return hiddenView; }
+    void rebuild() { WorldNotesClient.setScreen(minecraft, new BookmarkScreen(page, filter, hiddenView, query)); }
+    @Override
+    public void onClose() { if (hiddenView) WorldNotesClient.setScreen(minecraft, new BookmarkScreen()); else super.onClose(); }
 
     private void addCurrent() {
         if (minecraft.player == null || minecraft.level == null) return;
-        Bookmark bookmark = new Bookmark(WorldNotesClient.profile(minecraft), "New bookmark", "",
-                WorldNotesClient.dimension(minecraft.level),
-                Bookmark.roundToHundredth(minecraft.player.getX()),
-                Bookmark.roundToHundredth(minecraft.player.getY()),
-                Bookmark.roundToHundredth(minecraft.player.getZ()));
+        Bookmark bookmark = new Bookmark(WorldNotesClient.profile(minecraft), "New bookmark", "", WorldNotesClient.dimension(minecraft.level),
+                Bookmark.roundToHundredth(minecraft.player.getX()), Bookmark.roundToHundredth(minecraft.player.getY()), Bookmark.roundToHundredth(minecraft.player.getZ()));
         WorldNotesClient.setScreen(minecraft, new BookmarkEditorScreen(this, bookmark));
     }
 
-    private boolean hasTeleportCommand() {
-        return minecraft.player != null && minecraft.player.connection.getCommands().getRoot().getChild("tp") != null;
+    private boolean canTeleport(Bookmark bookmark) {
+        if (minecraft.player == null || minecraft.level == null || !bookmark.validCoordinates() || !Bookmark.validDimension(bookmark.dimension)) return false;
+        var root = minecraft.player.connection.getCommands().getRoot();
+        if (root.getChild("tp") == null) return false;
+        return bookmark.dimension.equals(WorldNotesClient.dimension(minecraft.level))
+                || root.getChild("execute") != null && root.getChild("execute").getChild("in") != null;
     }
-
     private void teleport(Bookmark bookmark) {
-        if (!hasTeleportCommand()) return;
+        if (!canTeleport(bookmark)) return;
         String position = String.format(Locale.ROOT, "%.2f %.2f %.2f", bookmark.x, bookmark.y, bookmark.z);
-        String command = minecraft.level != null && bookmark.dimension.equals(WorldNotesClient.dimension(minecraft.level))
-                ? "tp @s " + position
+        String command = bookmark.dimension.equals(WorldNotesClient.dimension(minecraft.level)) ? "tp @s " + position
                 : "execute in " + bookmark.dimension + " run tp @s " + position;
         minecraft.player.connection.sendCommand(command);
-        minecraft.gui.chatListener().handleSystemMessage(Component.translatable("worldnotes.teleport_success",
-                bookmark.displayName(), Component.literal(coordinates(bookmark)),
-                Component.literal(DimensionStyle.friendly(bookmark.dimension))), false);
+        minecraft.gui.chatListener().handleSystemMessage(Component.translatable("worldnotes.teleport_requested", bookmark.displayName()), false);
         onClose();
     }
-
     private void confirmUnhide(Bookmark bookmark) {
         WorldNotesClient.setScreen(minecraft, new ConfirmScreen(confirmed -> {
             if (confirmed) {
                 bookmark.hidden = false;
-                BookmarkStore.save(bookmark);
-                rebuild();
-            } else {
-                WorldNotesClient.setScreen(minecraft, this);
-            }
-        }, Component.translatable("worldnotes.unhide_confirm.title"),
-                Component.translatable("worldnotes.unhide_confirm.message"),
-                Component.translatable("worldnotes.unhide_confirm.confirm"),
-                Component.translatable("worldnotes.unhide_confirm.cancel")));
+                if (!BookmarkStore.save(bookmark)) {
+                    error = Component.translatable("worldnotes.save_failed");
+                    WorldNotesClient.setScreen(minecraft, this);
+                } else rebuild();
+            } else WorldNotesClient.setScreen(minecraft, this);
+        }, Component.translatable("worldnotes.unhide_confirm.title"), Component.translatable("worldnotes.unhide_confirm.message"),
+                Component.translatable("worldnotes.unhide_confirm.confirm"), Component.translatable("worldnotes.unhide_confirm.cancel")));
     }
-
-    void rebuild() {
-        page = Math.max(0, page);
-        WorldNotesClient.setScreen(minecraft, new BookmarkScreen(page, filter, hiddenView));
-    }
-
+    private record RowLayout(Bookmark bookmark, int y) { }
+    static String coordinates(Bookmark bookmark) { return String.format(Locale.ROOT, "%.2f, %.2f, %.2f", bookmark.x, bookmark.y, bookmark.z); }
     static String friendly(String dimension) {
-        return DimensionStyle.friendly(dimension);
+        return switch (dimension) { case "all" -> "All dimensions"; case "minecraft:overworld" -> "Overworld";
+            case "minecraft:the_nether" -> "Nether"; case "minecraft:the_end" -> "The End"; default -> dimension; };
     }
-
     static Component dimensionComponent(String dimension) {
-        return DimensionStyle.component(dimension);
-    }
-
-    private Component filterComponent() {
-        return Component.literal("Show: ").append(dimensionComponent(DimensionStyle.VALUES[filter].key));
-    }
-
-    private static String coordinates(Bookmark bookmark) {
-        return String.format(Locale.ROOT, "%.2f, %.2f, %.2f", bookmark.x, bookmark.y, bookmark.z);
-    }
-
-    private enum DimensionStyle {
-        ALL("All dimensions", "All dimensions", 0x55402D1D, 0x55FFFF, 0x00AAAA),
-        OVERWORLD("minecraft:overworld", "Overworld", 0x55402D1D, 0x55FF55, 0x00AA00),
-        NETHER("minecraft:the_nether", "Nether", 0x556A211B, 0xFF5555, 0xAA0000),
-        END("minecraft:the_end", "The End", 0x555F5B3F, 0xFF55FF, 0xAA00AA);
-
-        static final DimensionStyle[] VALUES = values();
-        final String key;
-        final String label;
-        final int tint;
-        final int gradientStart;
-        final int gradientEnd;
-
-        DimensionStyle(String key, String label, int tint, int gradientStart, int gradientEnd) {
-            this.key = key;
-            this.label = label;
-            this.tint = tint;
-            this.gradientStart = gradientStart;
-            this.gradientEnd = gradientEnd;
-        }
-
-        private static DimensionStyle fromKey(String key) {
-            for (DimensionStyle style : VALUES) if (style.key.equals(key)) return style;
-            return null;
-        }
-
-        static String friendly(String dimension) {
-            DimensionStyle style = fromKey(dimension);
-            return style != null ? style.label : dimension;
-        }
-
-        static Component component(String dimension) {
-            DimensionStyle style = fromKey(dimension);
-            return style != null ? Bookmark.gradientText(style.label, style.gradientStart, style.gradientEnd)
-                    : Component.literal(dimension);
-        }
-
-        static int tint(String dimension) {
-            DimensionStyle style = fromKey(dimension);
-            return style != null ? style.tint : OVERWORLD.tint;
-        }
+        return Component.literal(friendly(dimension)).withStyle(style -> style.withColor(WorldNotesTheme.dimensionAccent(dimension) & 0xFFFFFF));
     }
 }

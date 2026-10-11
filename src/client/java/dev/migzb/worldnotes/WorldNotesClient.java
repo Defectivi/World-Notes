@@ -18,8 +18,8 @@ public final class WorldNotesClient {
     private static KeyMapping zoomMinimap;
     private static String trackedId;
     private static String trackedProfile;
-    private static Bookmark trackedEntry;
     private static Path configDirectory;
+    private static String migratedProfile;
 
     public static void initialize(Path configDir) {
         if (configDirectory != null) return;
@@ -64,13 +64,11 @@ public final class WorldNotesClient {
     public static void track(Bookmark bookmark) {
         trackedId = bookmark.id;
         trackedProfile = bookmark.profile;
-        trackedEntry = bookmark;
     }
 
     public static void stopTracking() {
         trackedId = null;
         trackedProfile = null;
-        trackedEntry = null;
     }
 
     public static boolean isTracked(Bookmark bookmark) {
@@ -85,10 +83,8 @@ public final class WorldNotesClient {
 
     public static Bookmark trackedBookmark(Minecraft client) {
         if (trackedId == null || !profile(client).equals(trackedProfile)) return null;
-        if (trackedEntry != null && trackedId.equals(trackedEntry.id)) return trackedEntry;
-        for (Bookmark bookmark : BookmarkStore.forProfile(trackedProfile)) {
-            if (trackedId.equals(bookmark.id)) return bookmark;
-        }
+        Bookmark bookmark = BookmarkStore.find(trackedProfile, trackedId);
+        if (bookmark != null) return bookmark;
         stopTracking();
         return null;
     }
@@ -97,8 +93,10 @@ public final class WorldNotesClient {
         if (client.getSingleplayerServer() != null) {
             String profile = "world:" + client.getSingleplayerServer().getWorldPath(LevelResource.ROOT)
                     .toAbsolutePath().normalize();
-            BookmarkStore.migrateProfile(
-                    "world:" + client.getSingleplayerServer().getWorldData().getLevelName(), profile);
+            if (!profile.equals(migratedProfile)) {
+                BookmarkStore.migrateProfile("world:" + client.getSingleplayerServer().getWorldData().getLevelName(), profile);
+                migratedProfile = profile;
+            }
             return profile;
         }
         if (client.getCurrentServer() != null) return "server:" + client.getCurrentServer().ip;

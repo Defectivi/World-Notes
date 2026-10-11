@@ -4,7 +4,7 @@ A client-side Fabric and Forge terrain minimap and bookmark manager for Minecraf
 
 Press **B** to open the bookmark manager. The keybind can be changed in Minecraft's Controls settings.
 
-## Current version: 0.2.1-beta
+## Current version: 0.2.2-beta
 
 Version targets checked on October 11, 2026 against [Fabric metadata](https://meta.fabricmc.net/v2/versions/game):
 
@@ -41,7 +41,7 @@ Forge support targets 26.3 only. [Forge's official version list](https://files.m
 .\gradlew.bat build -Pchannel=legacy
 .\gradlew.bat -p forge build
 # Or build all Fabric channels and Forge:
-.\build-all.ps1
+.\build-all.bat
 ```
 
 Fabric jars are written to `build/libs/`; Forge jars go to `forge/build/libs/`. CI compiles all Fabric channels and Forge independently. Compilation checks API compatibility; in-game testing is still needed for rendering and interaction.
@@ -50,13 +50,23 @@ The common client features live in `src/client/java`. Fabric registration lives 
 
 ## Bookmarks
 
+- Search names, notes, dimensions, and coordinates without losing typing focus.
+- Compact previews and responsive pagination keep long notes inside the list; open a bookmark to read/edit the full values.
+- Deepslate textures, faint cartography grids, dimension accents, and tracked-location highlights provide a consistent background for the manager, editor, and minimap.
+- Editing uses a separate draft. Cancel or Escape discards it; changing colour or dimension never saves implicitly. New bookmarks must be saved before tracking.
+- Invalid or non-finite coordinates show an error instead of silently falling back. Horizontal coordinates must be within ±30 million and Y within ±20 million.
+- Saves use temporary files and atomic replacement where supported, retaining the previous document in `config/worldnotes/bookmarks.json.bak`. A damaged primary loads the backup; if neither file can be read, saving is blocked to preserve the damaged data. Check the game log and restore a valid JSON file before restarting.
+- Teleport messages report a request; the server decides whether it succeeds. Cross-dimension teleport buttons also check availability of `execute in`.
+
+The Forge build runs persistence regression tests for draft isolation, world separation, backup recovery, write failures, and validation. Run them with `.\gradlew.bat -p forge test`.
+
 - Create bookmarks at the player's current position or enter coordinates manually.
 - Store a name, optional note, dimension, and coordinates rounded to two decimal places.
 - Track one bookmark per world with direction, distance, and destination dimension guidance.
 - View bookmark details separately from editing.
 - Use dimension filters for Overworld, Nether, End, or all dimensions.
 - Use native Minecraft icons for adding, editing, and teleporting bookmarks.
-- Teleport controls respect the player's command permissions and provide confirmation messages.
+- Teleport controls respect the player's command permissions and show request messages.
 - Choose black, red, yellow, blue, orange, purple, green, or pink name colors and gradients.
 - View dimension-specific colors and backgrounds throughout the interface.
 - Bookmarks are separated between singleplayer worlds.
