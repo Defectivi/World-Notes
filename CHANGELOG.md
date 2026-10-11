@@ -4,6 +4,11 @@ All notable changes to the mod are documented here.
 
 ## 1.0.0 stable
 
+- Fixed movement restarting cave scans: verified short walking paths and shifted cached masks, floor pixels, queued work, and pending chunk frontiers instead of starting over.
+- Added a normal Nether terrain view with floor/lava sampling below the bedrock roof and local enclosure detection for actual Nether tunnels.
+- Retained normal terrain while cave views are active and used standing floors to keep short jumps from changing cave bands.
+- Added movement, dense/diagonal mask shifts, unfinished queues, delayed frontiers, Nether enclosure, roof exclusion, lava, and jump-boundary regression coverage.
+
 - Fixed repeated Nether cave-map resets by retaining unprocessed seeds/frontiers and rebuilding only for actual passage changes.
 - Updated cave floor colours in place for visual block changes, preserving the current scan and discovered terrain.
 - Added expired-budget, missing-seed, blocked-seed recovery, pending-player-position, repeated nonblocking-update, and floor-colour regression coverage.

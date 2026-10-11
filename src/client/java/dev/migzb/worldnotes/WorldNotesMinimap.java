@@ -29,8 +29,13 @@ final class WorldNotesMinimap {
     private static MinimapSettings settings;
     private static ClientLevel level;
     private static TerrainCache cache;
+    private static TerrainCache rememberedSurface;
+    private static String rememberedSurfaceContext;
     private static CaveLayer cave;
     private static boolean caveDirty;
+    private static boolean netherOpen;
+    private static int netherAnchor=Integer.MIN_VALUE;
+    private static final Map<Long,Boolean> netherCaveColumns=new HashMap<>();
     private static String context;
     private static int originX, originZ, cursor, tickCount;
     private static int scanX=Integer.MIN_VALUE,scanZ,scanZoom;
@@ -66,7 +71,7 @@ final class WorldNotesMinimap {
     static int span() { return Math.max(16, radius * 32 / settings.zoom); }
     static int radius() { return radius; }
     static int coverage() { return coverage; }
-    static String layerLabel(){return cave==null?"Surface":"Cave Y "+cave.minY+".."+(cave.minY+15);}
+    static String layerLabel(){return cave==null?(netherOpen?"Nether terrain":"Surface"):"Cave Y "+cave.minY+".."+(cave.minY+15);}
     static void terrainChanged(BlockPos position) {
         if(cave==null||level==null)return;
         LevelChunk chunk=level.getChunkSource().getChunk(Math.floorDiv(position.getX(),16),Math.floorDiv(position.getZ(),16),false);
@@ -74,20 +79,41 @@ final class WorldNotesMinimap {
         var state=chunk.getBlockState(position);
         boolean open=chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,position.getX()&15,position.getZ()&15)>position.getY()
                 &&!state.isCollisionShapeFullBlock(level,position);
+        long column=((long)position.getX()<<32)|(position.getZ()&0xFFFFFFFFL);
+        if(netherOpen&&Boolean.FALSE.equals(netherCaveColumns.get(column)))open=false;
         int rgb=state.getMapColor(level,position).col;
         if(cave.changed(position.getX(),position.getY(),position.getZ(),open,rgb==0?0xFF484F59:0xFF000000|rgb))caveDirty=true;
     }
     private static boolean underground(Minecraft client) {
         int x=client.player.getBlockX(),z=client.player.getBlockZ();
+        if(client.level.dimensionType().hasCeiling())return NetherTerrain.cave(netherBlocks(client.level),x,client.player.getBlockY(),z,
+                client.level.dimensionType().logicalHeight()-8,cave!=null&&level==client.level);
         LevelChunk chunk=client.level.getChunkSource().getChunk(Math.floorDiv(x,16),Math.floorDiv(z,16),false);
         if(chunk==null)return cave!=null;
         int roof=chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,x&15,z&15);
         POSITION.set(x,roof,z);
         return roof>client.player.getEyeY() && chunk.getBlockState(POSITION).getFluidState().isEmpty();
     }
+    private static NetherTerrain.Blocks netherBlocks(ClientLevel target) {
+        return new NetherTerrain.Blocks() {
+            public int space(int x,int y,int z) {
+                if(y<target.getMinY()||y>=target.getMinY()+target.getHeight())return 0;
+                LevelChunk chunk=target.getChunkSource().getChunk(Math.floorDiv(x,16),Math.floorDiv(z,16),false);
+                if(chunk==null)return -1;
+                POSITION.set(x,y,z);var state=chunk.getBlockState(POSITION);
+                return state.isCollisionShapeFullBlock(target,POSITION)?0:state.getFluidState().isEmpty()?1:2;
+            }
+            public int color(int x,int y,int z) {
+                LevelChunk chunk=target.getChunkSource().getChunk(Math.floorDiv(x,16),Math.floorDiv(z,16),false);
+                if(chunk==null)return UNKNOWN;
+                POSITION.set(x,y,z);int rgb=chunk.getBlockState(POSITION).getMapColor(target,POSITION).col;
+                return rgb==0?0xFF484F59:0xFF000000|rgb;
+            }
+        };
+    }
     static void tick(Minecraft client) {
         if (client.level == null || client.player == null) {
-            level=null; cache=null; cave=null; context=null; pixels=new int[0]; imageRevision=-1;
+            level=null; cache=null; rememberedSurface=null;rememberedSurfaceContext=null;cave=null; context=null; pixels=new int[0]; imageRevision=-1;netherAnchor=Integer.MIN_VALUE;netherCaveColumns.clear();
             if(terrainTexture!=null) { terrainTexture.close(); terrainTexture=null; textureSize=0; }
             return;
         }
@@ -102,31 +128,45 @@ final class WorldNotesMinimap {
             markers = BookmarkStore.forProfile(profile); markerProfile=profile; markerRevision=BookmarkStore.revision();
         }
         boolean below=underground(client);
-        String band = below?"connected-cave:"+Math.floorDiv(client.player.getBlockY(),16):"surface";
+        int layerY=NetherTerrain.supportY(netherBlocks(client.level),client.player.getBlockX(),client.player.getBlockY(),client.player.getBlockZ());
+        netherOpen=client.level.dimensionType().hasCeiling()&&client.player.getBlockY()<client.level.dimensionType().logicalHeight();
+        if(netherOpen&&(level!=client.level||netherAnchor==Integer.MIN_VALUE||Math.abs((long)client.player.getBlockY()-netherAnchor)>24))
+            netherAnchor=Math.floorDiv(client.player.getBlockY(),32)*32+16;
+        String band = below?"connected-cave:"+Math.floorDiv(layerY,16):netherOpen?"nether-open-v1:"+netherAnchor:"surface";
         // The versioned context preserves old coarse history without treating it as block-level data.
         String nextContext = "blocks-v2\n"+profile+"\n"+WorldNotesClient.dimension(client.level)+"\n"+band;
         if (level != client.level || !nextContext.equals(context)) {
+            if(level!=client.level){rememberedSurface=null;rememberedSurfaceContext=null;}
             level=client.level; context=nextContext; cursor=0;
-            cache=new TerrainCache(WorldNotesClient.configDirectory().resolve("worldnotes/terrain"), context);
+            cache=!below&&context.equals(rememberedSurfaceContext)?rememberedSurface:
+                    new TerrainCache(WorldNotesClient.configDirectory().resolve("worldnotes/terrain"), context);
+            if(!below){rememberedSurface=cache;rememberedSurfaceContext=context;}
             imageRevision=-1;
             cave=null;
+            netherCaveColumns.clear();
             scanX=Integer.MIN_VALUE;
         }
         int cx=Math.floorDiv(client.player.getBlockX(),16), cz=Math.floorDiv(client.player.getBlockZ(),16);
         originX=client.player.getBlockX()-span()/2; originZ=client.player.getBlockZ()-span()/2;
         if(below) {
-            int x=client.player.getBlockX(),y=client.player.getBlockY(),z=client.player.getBlockZ();
-            if(cave==null || caveDirty || cave.width!=radius*32+1 || Math.abs((long)x-cave.centerX)>16 || Math.abs((long)z-cave.centerZ)>16
-                    || cave.needsReseed(x,y,z)) {
-                cave=new CaveLayer(x,y,z,radius);imageRevision=-1;caveDirty=false;
-            }
-            if(tickCount%20==0)cave.retryUnknown();
-            cave.advance(new CaveLayer.Terrain() {
+            int x=client.player.getBlockX(),y=layerY,z=client.player.getBlockZ();
+            NetherTerrain.Blocks blocks=netherBlocks(level);
+            CaveLayer.Terrain terrain=new CaveLayer.Terrain() {
                 public int space(int x,int y,int z) {
                     if(y<level.getMinY()||y>=level.getMinY()+level.getHeight())return 0;
                     if(!MapNavigation.inRange(Math.floorDiv(x,16),Math.floorDiv(z,16),cx,cz,radius))return -1;
                     LevelChunk chunk=level.getChunkSource().getChunk(Math.floorDiv(x,16),Math.floorDiv(z,16),false);
                     if(chunk==null)return -1;
+                    if(netherOpen) {
+                        long column=((long)x<<32)|(z&0xFFFFFFFFL);
+                        Boolean enclosed=netherCaveColumns.get(column);
+                        if(enclosed==null) {
+                            int result=NetherTerrain.enclosure(blocks,x,cave.referenceY(),z,level.dimensionType().logicalHeight()-8,true);
+                            if(result<0)return -1;
+                            enclosed=result==1;netherCaveColumns.put(column,enclosed);
+                        }
+                        if(!enclosed)return 0;
+                    }
                     POSITION.set(x,y,z);
                     if(chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,x&15,z&15)<=y)return 0;
                     return chunk.getBlockState(POSITION).isCollisionShapeFullBlock(level,POSITION)?0:1;
@@ -138,12 +178,22 @@ final class WorldNotesMinimap {
                     int rgb=chunk.getBlockState(POSITION).getMapColor(level,POSITION).col;
                     return rgb==0?0xFF484F59:0xFF000000|rgb;
                 }
-            },4096,System.nanoTime()+6_000_000L);
+            };
+            long deadline=System.nanoTime()+6_000_000L;
+            if(cave==null || caveDirty || cave.width!=radius*32+1 || cave.followPlayer(terrain,x,y,z,deadline)) {
+                cave=new CaveLayer(x,y,z,radius);imageRevision=-1;caveDirty=false;netherCaveColumns.clear();
+            } else if(Math.abs((long)x-cave.centerX)>=Math.min(16,radius*8)||Math.abs((long)z-cave.centerZ)>=Math.min(16,radius*8)) {
+                cave=cave.recenter(x,z);imageRevision=-1;
+                netherCaveColumns.keySet().removeIf(key->Math.abs((long)(int)(key>>32)-x)>radius*16||Math.abs((long)(int)(long)key-z)>radius*16);
+            }
+            if(tickCount%20==0)cave.retryUnknown();
+            cave.advance(terrain,4096,deadline);
         } else {
         if(cx!=scanX || cz!=scanZ || scanZoom!=settings.zoom || cursor>=offsets.size() && tickCount%4==0) {
             scanX=cx;scanZ=cz;scanZoom=settings.zoom;cursor=0;
         }
         int samples=0;
+        NetherTerrain.Blocks floorBlocks=netherOpen?netherBlocks(level):null;
         long deadline=System.nanoTime()+6_000_000L;
         for (int work=0; work<512 && cursor<offsets.size() && samples<32 && System.nanoTime()<deadline; work++) {
             int[] offset=offsets.get(cursor++);
@@ -153,7 +203,8 @@ final class WorldNotesMinimap {
             if (chunk==null) { cache.request(x,z);continue; }
             int[] colors=new int[TerrainTileFile.SAMPLES];
             for (int row=0; row<16; row++) for (int col=0; col<16; col++)
-                colors[row*16+col]=sampleColor(chunk,x*16+col,z*16+row);
+                colors[row*16+col]=floorBlocks==null?sampleColor(chunk,x*16+col,z*16+row):
+                        NetherTerrain.floor(floorBlocks,x*16+col,z*16+row,netherAnchor,level.getMinY(),level.dimensionType().logicalHeight()-8);
             cache.store(x,z,colors); samples++;
         }
         if (tickCount % 100 == 99) cache.trim(cx,cz,radius+2);
