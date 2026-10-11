@@ -31,21 +31,21 @@ final class WorldNotesMinimap {
     static void initialize() { settings = MinimapSettings.load(); }
     static boolean visible(Minecraft client) {
         return settings != null && settings.enabled && client.player != null && client.level != null
-                && !client.gui.hud.isHidden() && client.getWindow().getGuiScaledWidth() >= 240
+                && !WorldNotesGui.hidden(client) && client.getWindow().getGuiScaledWidth() >= 240
                 && client.getWindow().getGuiScaledHeight() >= 180;
     }
     static void toggle(Minecraft client) {
         settings.enabled = !settings.enabled;
         settings.save();
-        if (client.player != null) client.gui.hud.setOverlayMessage(
-                Component.translatable(settings.enabled ? "worldnotes.minimap.enabled" : "worldnotes.minimap.disabled"), false);
+        if (client.player != null) WorldNotesGui.overlay(client,
+                Component.translatable(settings.enabled ? "worldnotes.minimap.enabled" : "worldnotes.minimap.disabled"));
     }
     static void zoom(Minecraft client) {
         settings.blocksPerPixel = settings.blocksPerPixel == 4 ? 1 : settings.blocksPerPixel * 2;
         initialized = false;
         settings.save();
-        if (client.player != null) client.gui.hud.setOverlayMessage(
-                Component.translatable("worldnotes.minimap.zoom", GRID * settings.blocksPerPixel), false);
+        if (client.player != null) WorldNotesGui.overlay(client,
+                Component.translatable("worldnotes.minimap.zoom", GRID * settings.blocksPerPixel));
     }
 
     static void tick(Minecraft client) {

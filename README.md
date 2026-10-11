@@ -1,10 +1,10 @@
 # World Notes & Coordinates
 
-A client-side Fabric and Forge terrain minimap and bookmark manager for Minecraft Java.
+A client-side Fabric, Forge, and NeoForge terrain minimap and bookmark manager for Minecraft Java.
 
 Press **B** to open the bookmark manager. The keybind can be changed in Minecraft's Controls settings.
 
-## Current version: 0.2.2-beta
+## Current version: 1.0.0 stable
 
 Version targets checked on October 11, 2026 against [Fabric metadata](https://meta.fabricmc.net/v2/versions/game):
 
@@ -13,14 +13,21 @@ Version targets checked on October 11, 2026 against [Fabric metadata](https://me
 | release (default) | 26.3 | 0.162.0+26.3 |
 | snapshot | 26.4-snapshot-3 | 0.162.2+26.4 |
 | legacy | 26.2 | 0.161.0+26.2 |
+| lts | 26.1.2 | 0.155.3+26.1.2 |
 
 Install only the jar matching your Minecraft version, with Fabric Loader 0.19.5 or newer and the matching Fabric API. Java 25 is required. Each jar declares its exact Minecraft target; future snapshots need a dependency update and a new build before they can be claimed as supported.
 
 ### Forge
 
-Use the separate `world-notes-forge` jar with **Minecraft 26.3 and Forge 66.0.10 or newer in the 66.x series**. Install it on your client; servers do not need the mod. The Forge jar includes the same minimap, bookmark screens, tracking, keys, and local JSON saves, and does not need Fabric API. Choose the jar for your installed loader.
+Use the separate `world-notes-forge` jar with **Minecraft 26.3 / Forge 66.0.10+ within 66.x**, or **Minecraft 26.1.2 / Forge 64.1.3+ within 64.x**. Install it on your client; servers do not need the mod. The Forge jar includes the same minimap, bookmark screens, tracking, keys, and local JSON saves, and does not need Fabric API. Choose the jar for your installed loader and Minecraft version.
 
-Forge support targets 26.3 only. [Forge's official version list](https://files.minecraftforge.net/net/minecraftforge/forge/index_26.3.html) has no 26.4 snapshot build as of October 11, 2026; the snapshot channel remains Fabric-only. Forge and NeoForge are separate loaders; this build targets Forge.
+[Forge's official version list](https://files.minecraftforge.net/net/minecraftforge/forge/index_26.3.html) has no 26.4 snapshot build as of October 11, 2026; the snapshot channel remains Fabric-only.
+
+### NeoForge
+
+Use the separate `world-notes-neoforge` jar with **Minecraft 26.1.2 / NeoForge 26.1.2.116+ within 26.1.2**, or **Minecraft 26.3 / NeoForge 26.3.0.69-beta+ within 26.3**. These dependencies were checked against [NeoForge's official Maven metadata](https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml). NeoForge's 26.3 loader is currently beta; World Notes 1.0.0 is the mod's stable version. Forge and NeoForge are distinct loaders and need their respective jars. NeoForge does not need Fabric API.
+
+The `lts` channel is a pinned 26.1.2 compatibility target; it does not promise upstream long-term maintenance. Separate compile-checked HUD adapters handle Minecraft's 26.1.2 and newer GUI APIs.
 
 ## Minimap
 
@@ -39,14 +46,20 @@ Forge support targets 26.3 only. [Forge's official version list](https://files.m
 .\gradlew.bat build
 .\gradlew.bat build -Pchannel=snapshot
 .\gradlew.bat build -Pchannel=legacy
+.\gradlew.bat build -Pchannel=lts
 .\gradlew.bat -p forge build
-# Or build all Fabric channels and Forge:
+.\gradlew.bat -p forge build -Pchannel=lts
+.\gradlew.bat -p neoforge build
+.\gradlew.bat -p neoforge build -Pchannel=lts
+# Or build all eight targets:
 .\build-all.bat
 ```
 
-Fabric jars are written to `build/libs/`; Forge jars go to `forge/build/libs/`. CI compiles all Fabric channels and Forge independently. Compilation checks API compatibility; in-game testing is still needed for rendering and interaction.
+Fabric jars are written to `build/libs/`; Forge jars go to `forge/build/libs/`; NeoForge jars go to `neoforge/build/libs/`. CI compiles all eight targets independently. Compilation checks API compatibility; in-game testing is still needed for rendering and interaction.
 
-The common client features live in `src/client/java`. Fabric registration lives in `src/fabric/java`; Forge registration and metadata live in `forge/src/main`. Both loaders use `config/worldnotes/bookmarks.json` and `config/worldnotes/minimap.json` in their game directory.
+The common client features live in `src/client/java`; version-specific HUD calls live in `src/compat/`. Fabric registration lives in `src/fabric/java`; Forge and NeoForge registration and metadata live in their respective `src/main` folders. All loaders use `config/worldnotes/bookmarks.json` and `config/worldnotes/minimap.json` in their game directory.
+
+Pushing a `v<mod_version>` tag publishes a GitHub stable release after all CI builds pass. Downloads include seven stable client jars and SHA-256 checksums; snapshot and source jars are excluded. See [RELEASE_NOTES.md](RELEASE_NOTES.md) for installation targets and validation limits.
 
 ## Bookmarks
 

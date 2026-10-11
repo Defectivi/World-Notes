@@ -202,7 +202,7 @@ public final class BookmarkScreen extends Screen {
         String command = bookmark.dimension.equals(WorldNotesClient.dimension(minecraft.level)) ? "tp @s " + position
                 : "execute in " + bookmark.dimension + " run tp @s " + position;
         minecraft.player.connection.sendCommand(command);
-        minecraft.gui.chatListener().handleSystemMessage(Component.translatable("worldnotes.teleport_requested", bookmark.displayName()), false);
+        WorldNotesGui.chat(minecraft, Component.translatable("worldnotes.teleport_requested", bookmark.displayName()));
         onClose();
     }
     private void confirmUnhide(Bookmark bookmark) {

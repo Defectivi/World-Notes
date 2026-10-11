@@ -17,7 +17,7 @@ public final class WorldNotesHud {
     public static void render(net.minecraft.client.gui.GuiGraphicsExtractor graphics,
                               net.minecraft.client.DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || minecraft.level == null || minecraft.gui.hud.isHidden()) return;
+        if (minecraft.player == null || minecraft.level == null || WorldNotesGui.hidden(minecraft)) return;
         WorldNotesMinimap.render(graphics, minecraft);
 
         Component dimension = BookmarkScreen.dimensionComponent(WorldNotesClient.dimension(minecraft.level));

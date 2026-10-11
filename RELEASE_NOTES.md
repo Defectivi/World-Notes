@@ -1,0 +1,26 @@
+# World Notes 1.0.0
+
+The first 1.0 stable release adds Minecraft 26.1.2 compatibility and native NeoForge support to the client-side minimap and bookmark manager.
+
+Install one jar matching both your Minecraft version and mod loader. Java 25 is required. Servers do not need World Notes.
+
+| Loader | Minecraft | Required dependency |
+| --- | --- | --- |
+| Fabric | 26.1.2 | Fabric Loader 0.19.5+, Fabric API 0.155.3+26.1.2 |
+| Fabric | 26.2 | Fabric Loader 0.19.5+, Fabric API 0.161.0+26.2 |
+| Fabric | 26.3 | Fabric Loader 0.19.5+, Fabric API 0.162.0+26.3 |
+| Forge | 26.3 | Forge 66.0.10+ within 66.x |
+| Forge | 26.1.2 | Forge 64.1.3+ within 64.x |
+| NeoForge | 26.1.2 | NeoForge 26.1.2.116+ within 26.1.2 |
+| NeoForge | 26.3 | NeoForge 26.3.0.69-beta+ within 26.3 |
+
+NeoForge's 26.3 loader is currently beta. Fabric 26.4-snapshot-3 builds are experimental CI artifacts and are excluded from stable release downloads.
+
+- North-up terrain minimap, configurable visibility/zoom keys, dimension-aware markers, and tracked destination guidance.
+- Searchable bookmarks with notes, hidden entries, colours, and a deepslate/cartography interface.
+- Separate world/server profiles, safe editor cancellation, validated coordinates, transactional saves, and automatic backup recovery.
+- Compile-checked HUD adapters preserve visibility and status messages on both Minecraft 26.1.2 and newer targets.
+
+Existing bookmark and minimap files in `config/worldnotes/` are shared across loaders when using the same game directory. Keep a copy before switching game versions.
+
+All supported targets are built before publication, with persistence regression tests on the Forge classpath. In-game rendering and interaction have not been manually verified for this release.

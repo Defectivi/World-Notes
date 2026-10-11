@@ -2,6 +2,15 @@
 
 All notable changes to the mod are documented here.
 
+## 1.0.0 stable
+
+- Added Minecraft 26.1.2 targets for Fabric, Forge, and NeoForge.
+- Added native client-only NeoForge entrypoints, key mappings, HUD layers, and client tick integration for 26.1.2 and 26.3.
+- Added compile-checked version-specific HUD adapters for Minecraft 26.1.2 and newer versions.
+- Expanded local build scripts and CI to all eight supported loader/version targets.
+- Added release-tag publication of stable client jars and SHA-256 checksums after successful CI; snapshot jars remain experimental artifacts.
+- Retained existing local bookmark and minimap data formats across all loaders.
+
 ## 0.2.2-beta
 
 - Added bookmark search, responsive pagination, bounded previews, and empty/search result messages.

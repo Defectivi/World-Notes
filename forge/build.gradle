@@ -5,12 +5,15 @@ plugins {
 
 def sharedProperties = new Properties()
 file('../gradle.properties').withInputStream { sharedProperties.load(it) }
-version = "${sharedProperties.mod_version}+mc26.3"
+def targets = [
+    release: [minecraft: '26.3', forge: '66.0.10', loader: '66', range: '[66.0.10,67)'],
+    lts: [minecraft: '26.1.2', forge: '64.1.3', loader: '64', range: '[64.1.3,65)']
+]
+def channel = providers.gradleProperty('channel').getOrElse('release')
+if (!targets.containsKey(channel)) throw new GradleException('Forge supports release (26.3) and lts (26.1.2)')
+def target = targets[channel]
+version = "${sharedProperties.mod_version}+mc${target.minecraft}"
 group = sharedProperties.maven_group
-
-if (providers.gradleProperty('channel').getOrElse('release') != 'release') {
-    throw new GradleException('Forge currently supports the release channel (Minecraft 26.3) only')
-}
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(25)
@@ -19,6 +22,7 @@ java {
 
 sourceSets.main {
     java.srcDir '../src/client/java'
+    java.srcDir "../src/compat/${target.minecraft == '26.1.2' ? '26.1.2' : 'modern'}/java"
     resources {
         srcDir '../src/main/resources'
         exclude 'fabric.mod.json'
@@ -43,7 +47,7 @@ repositories {
 }
 
 dependencies {
-    implementation minecraft.dependency('net.minecraftforge:forge:26.3-66.0.10')
+    implementation minecraft.dependency("net.minecraftforge:forge:${target.minecraft}-${target.forge}")
     annotationProcessor 'net.minecraftforge:eventbus-validator:7.0.6'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.13.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.4'
@@ -57,8 +61,11 @@ test {
 
 processResources {
     inputs.property 'version', project.version
-    def modVersion = project.version
-    filesMatching('META-INF/mods.toml') { expand version: modVersion }
+    inputs.property 'minecraft', target.minecraft
+    inputs.property 'forge_range', target.range
+    inputs.property 'loader', target.loader
+    def replacements = [version: project.version, minecraft: target.minecraft, forge_range: target.range, loader: target.loader]
+    filesMatching('META-INF/mods.toml') { expand replacements }
 }
 
 tasks.withType(JavaCompile).configureEach {

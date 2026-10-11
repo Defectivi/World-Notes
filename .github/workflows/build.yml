@@ -1,12 +1,14 @@
 name: Build supported Minecraft versions
 on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        channel: [legacy, release, snapshot]
+        channel: [lts, legacy, release, snapshot]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -21,6 +23,10 @@ jobs:
           path: build/libs/*.jar
   forge:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [lts, release]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -28,8 +34,53 @@ jobs:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
-      - run: bash ./gradlew -p forge build --console=plain
+      - run: bash ./gradlew -p forge build -Pchannel=${{ matrix.channel }} --console=plain
       - uses: actions/upload-artifact@v4
         with:
-          name: worldnotes-forge-26.3
+          name: worldnotes-forge-${{ matrix.channel }}
           path: forge/build/libs/*.jar
+  neoforge:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [lts, release]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: bash ./gradlew -p neoforge build -Pchannel=${{ matrix.channel }} --console=plain
+      - uses: actions/upload-artifact@v4
+        with:
+          name: worldnotes-neoforge-${{ matrix.channel }}
+          path: neoforge/build/libs/*.jar
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, forge, neoforge]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+      - name: Publish stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version=$(sed -n 's/^mod_version=//p' gradle.properties | tr -d '\r')
+          test "$GITHUB_REF_NAME" = "v$version"
+          assets=()
+          for jar in release-assets/*/*.jar; do
+            case "$jar" in *-sources.jar|*snapshot*) continue ;; esac
+            assets+=("$jar")
+          done
+          test "${#assets[@]}" -eq 7
+          sha256sum "${assets[@]}" | sed 's@  .*/@  @' > release-assets/SHA256SUMS.txt
+          gh release create "$GITHUB_REF_NAME" "${assets[@]}" release-assets/SHA256SUMS.txt \
+            --verify-tag --title "World Notes $version" --notes-file RELEASE_NOTES.md

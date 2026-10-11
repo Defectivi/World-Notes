@@ -6,10 +6,11 @@ plugins {
 def targets = [
     release: [minecraft: '26.3', api: '0.162.0+26.3'],
     snapshot: [minecraft: '26.4-snapshot-3', api: '0.162.2+26.4'],
-    legacy: [minecraft: '26.2', api: '0.161.0+26.2']
+    legacy: [minecraft: '26.2', api: '0.161.0+26.2'],
+    lts: [minecraft: '26.1.2', api: '0.155.3+26.1.2']
 ]
 def channel = providers.gradleProperty('channel').getOrElse('release')
-if (!targets.containsKey(channel)) throw new GradleException("Unknown channel '${channel}': use release, snapshot, or legacy")
+if (!targets.containsKey(channel)) throw new GradleException("Unknown channel '${channel}': use release, snapshot, legacy, or lts")
 def target = targets[channel]
 version = "${project.mod_version}+mc${target.minecraft}"
 group = project.maven_group
@@ -25,6 +26,7 @@ loom {
 }
 
 sourceSets.client.java.srcDir 'src/fabric/java'
+sourceSets.client.java.srcDir "src/compat/${target.minecraft == '26.1.2' ? '26.1.2' : 'modern'}/java"
 
 dependencies {
     minecraft "com.mojang:minecraft:${target.minecraft}"

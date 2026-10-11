@@ -4,3 +4,5 @@ build/
 *.iml
 forge/run/
 forge/logs/
+neoforge/run/
+neoforge/logs/
