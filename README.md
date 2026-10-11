@@ -35,6 +35,8 @@ The `lts` channel is a pinned 26.1.2 compatibility target; it does not promise u
 - **M** opens/closes the expanded map; **N** cycles 8, 16, and 32-chunk radii. Both keys are configurable in Controls. Hover a marker in the expanded map to identify it.
 - Purple markers show visible bookmarks; the tracked bookmark is gold. Hidden bookmarks stay hidden.
 - Yellow identifies dropped items, green identifies neutral/passive mobs, red identifies hostile mobs, and cyan identifies other players. Only entities currently known to your client are shown; terrain history does not store entities.
+- Crowded entities share a marker with a count; mixed groups show their category colours. Hover to see category totals, names, and exact coordinates. Your position has a white ring and a **You** label. Click the expanded map's legend buttons to filter categories; controls move to a sidebar on wide windows.
+- Items and mobs within 24 blocks of your elevation are shown by default, so underground entities do not cover the surface map. Disable **Nearby heights** in settings to show all elevations. Other players are shown at every elevation.
 - Samples only chunks already received by the client. Unknown terrain appears dark, even if the server generated it elsewhere. The map never asks the server to load distant chunks.
 - Explored terrain is saved asynchronously in `config/worldnotes/terrain/`, separated by world/server, dimension, and Nether elevation band. Cached terrain remains visible after chunks unload and after restarting. Samples use four-block spacing and a fixed budget per tick. Historical terrain is a snapshot; remove its cache to resurvey changed terrain.
 - Nether samples look for cave floors near your elevation. Above the roof, the map uses the surface again.

@@ -18,6 +18,7 @@ NeoForge's 26.3 loader is currently beta. Fabric 26.4-snapshot-3 builds are expe
 
 - North-up minimap with a default 32-chunk radius, persistent client-observed terrain history, and an expanded map opened with M.
 - Item, neutral/passive mob, hostile mob, and player markers with expanded-map hover identification. Entity information is limited to what the server sends to the client.
+- Smaller category symbols, crowded-entity groups with counts, clickable legend filters, a labelled player ring, nearby-height filtering, and responsive controls improve map readability at large GUI scales.
 - Settings above the hidden list control map visibility, position, size, radius, marker categories, and the client-only rainbow outline on the exact tracked coordinate block.
 - Dimension gradients, a day counter below coordinates, a diary-and-quill icon, and loader names in jar filenames and mod-list entries. Version remains 1.0.0.
 - Searchable bookmarks with notes, hidden entries, colours, and a deepslate/cartography interface.

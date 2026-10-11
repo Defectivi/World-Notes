@@ -115,40 +115,67 @@ final class WorldNotesMinimap {
         WorldNotesTheme.panel(graphics,b[0]-3,b[1]-3,b[2]+6,b[2]+17,WorldNotesTheme.dimensionAccent(WorldNotesClient.dimension(client.level)));
         renderMap(graphics,client,b[0],b[1],b[2],-1,-1,false);
         graphics.text(client.font,"N",b[0]+b[2]/2-3,b[1]-13,0xFFFFFFFF,true);
-        graphics.text(client.font,settings.radiusChunks+" chunks radius",b[0]+2,b[1]+b[2]+3,0xFFD4DEE9,true);
+        graphics.text(client.font,span()+" blocks across",b[0]+2,b[1]+b[2]+3,0xFFD4DEE9,true);
     }
     private static int coordinate(double value,int origin,int size) { return (int)Math.floor((value-origin)*size/span()); }
     private static void dot(GuiGraphicsExtractor g,int x,int y,int color,int radius) {
         g.fill(x-radius-1,y-radius-1,x+radius+2,y+radius+2,0xFF10151D);
         g.fill(x-radius,y-radius,x+radius+1,y+radius+1,color);
     }
-    static void renderMap(GuiGraphicsExtractor g,Minecraft client,int left,int top,int size,int mouseX,int mouseY,boolean expanded) {
-        if (cache==null || level!=client.level || client.player==null) return;
+    static List<Component> renderMap(GuiGraphicsExtractor g,Minecraft client,int left,int top,int size,int mouseX,int mouseY,boolean expanded) {
+        if (cache==null || level!=client.level || client.player==null) return List.of();
         int grid=Math.min(GRID,size);
         for (int row=0;row<grid;row++) {
             for (int col=0;col<grid;) {
                 int color=pixels[row*GRID/grid*GRID+col*GRID/grid],end=col+1;
                 while (end<grid && pixels[row*GRID/grid*GRID+end*GRID/grid]==color) end++;
-                g.fill(left+col*size/grid,top+row*size/grid,left+end*size/grid,top+(row+1)*size/grid,color); col=end;
+                // A gentler terrain palette keeps radar symbols legible over grass and water.
+                int muted=color==UNKNOWN?UNKNOWN:0xFF000000|((((color>>16)&255)*4/5+12)<<16)|((((color>>8)&255)*4/5+12)<<8)|((color&255)*4/5+12);
+                g.fill(left+col*size/grid,top+row*size/grid,left+end*size/grid,top+(row+1)*size/grid,muted); col=end;
             }
         }
         String dimension=WorldNotesClient.dimension(level);
-        Component hovered=null;
+        List<Component> hovered=List.of();
+        List<MapMarkerLayout.Marker> observations=new ArrayList<>();
         for (Entity entity:level.entitiesForRendering()) {
             if (entity==client.player || entity.isRemoved()) continue;
-            int color;
-            if (entity instanceof ItemEntity && settings.items) color=0xFFFFD96B;
-            else if (entity instanceof Player && settings.players) color=0xFF6DDFFF;
-            else if (entity instanceof NeutralMob && settings.neutralMobs) color=0xFF86E8A1;
-            else if (entity instanceof Enemy && !(entity instanceof NeutralMob) && settings.hostileMobs) color=0xFFFF6B75;
-            else if (entity instanceof Mob && !(entity instanceof Enemy) && settings.neutralMobs) color=0xFF86E8A1;
+            if(settings.nearbyHeights && !(entity instanceof Player) && Math.abs(entity.getY()-client.player.getY())>24) continue;
+            MapMarkerLayout.Kind kind;
+            if (entity instanceof ItemEntity && settings.items) kind=MapMarkerLayout.Kind.ITEM;
+            else if (entity instanceof Player && settings.players) kind=MapMarkerLayout.Kind.PLAYER;
+            else if (entity instanceof NeutralMob && settings.neutralMobs) kind=MapMarkerLayout.Kind.NEUTRAL;
+            else if (entity instanceof Enemy && !(entity instanceof NeutralMob) && settings.hostileMobs) kind=MapMarkerLayout.Kind.HOSTILE;
+            else if (entity instanceof Mob && !(entity instanceof Enemy) && settings.neutralMobs) kind=MapMarkerLayout.Kind.NEUTRAL;
             else continue;
             int x=coordinate(entity.getX(),originX,size),z=coordinate(entity.getZ(),originZ,size);
-            if(x<3||z<3||x>=size-3||z>=size-3) continue;
-            dot(g,left+x,top+z,color,expanded?2:1);
-            if (expanded && Math.abs(mouseX-left-x)<=5 && Math.abs(mouseY-top-z)<=5) {
-                hovered=entity instanceof ItemEntity item ? item.getItem().getHoverName().copy().append(" x"+item.getItem().getCount()) : entity.getDisplayName();
-                hovered=hovered.copy().append(" ("+entity.getBlockX()+", "+entity.getBlockY()+", "+entity.getBlockZ()+")");
+            String name=entity instanceof ItemEntity item ? item.getItem().getHoverName().getString()+" x"+item.getItem().getCount() : entity.getDisplayName().getString();
+            observations.add(new MapMarkerLayout.Marker(x,z,kind,name+" ("+entity.getBlockX()+", "+entity.getBlockY()+", "+entity.getBlockZ()+")"));
+        }
+        for(MapMarkerLayout.Group group:MapMarkerLayout.group(observations,expanded?22:10,size)) {
+            int x=left+group.x(),z=top+group.z();
+            List<MapMarkerLayout.Kind> kinds=Arrays.stream(MapMarkerLayout.Kind.values()).filter(kind->group.count(kind)>0).toList();
+            if(kinds.size()==1) {
+                if(expanded) symbol(g,x,z,kinds.getFirst());
+                else g.fill(x-1,z-1,x+2,z+2,kinds.getFirst().color);
+            }
+            else {
+                g.fill(x-3,z-3,x+4,z+4,0xE010151D);
+                for(int i=0;i<kinds.size();i++) g.fill(x-2+i%2*3,z-2+i/2*3,x+i%2*3,z+i/2*3,kinds.get(i).color);
+            }
+            if(expanded && group.members().size()>1) {
+                String count=group.members().size()>99?"99+":String.valueOf(group.members().size());
+                int countX=Math.clamp(x-client.font.width(count)/2,left+1,left+size-client.font.width(count)-1);
+                int countY=group.z()+14>=size?z-12:z+5;
+                g.text(client.font,count,countX,countY,0xFFFFFFFF,true);
+            }
+            if(expanded && Math.abs(mouseX-x)<=9 && Math.abs(mouseY-z)<=9) {
+                List<Component> details=new ArrayList<>();
+                details.add(Component.literal(group.summary()));
+                if(group.members().size()>1) {
+                    group.members().stream().limit(5).forEach(marker->details.add(Component.literal(marker.description()).withColor(marker.kind().color&0xFFFFFF)));
+                    if(group.members().size()>5) details.add(Component.literal("+"+(group.members().size()-5)+" more nearby"));
+                }
+                hovered=List.copyOf(details);
             }
         }
         for (Bookmark bookmark:markers) {
@@ -158,16 +185,33 @@ final class WorldNotesMinimap {
             if(tracked) { x=Math.clamp(x,3,size-4); z=Math.clamp(z,3,size-4); }
             else if(x<3||z<3||x>=size-3||z>=size-3) continue;
             dot(g,left+x,top+z,tracked?WorldNotesTheme.ACCENT:0xFFB5A0FF,2);
-            if(expanded && Math.abs(mouseX-left-x)<=5 && Math.abs(mouseY-top-z)<=5) hovered=bookmark.displayName();
+            if(expanded && Math.abs(mouseX-left-x)<=5 && Math.abs(mouseY-top-z)<=5) hovered=List.of(bookmark.displayName(),Component.literal(BookmarkScreen.coordinates(bookmark)));
         }
         int px=coordinate(client.player.getX(),originX,size),pz=coordinate(client.player.getZ(),originZ,size);
-        dot(g,left+px,top+pz,0xFFFFFFFF,2);
+        g.fill(left+px-4,top+pz-4,left+px+5,top+pz+5,0xFF10151D);
+        g.outline(left+px-4,top+pz-4,9,9,0xFFFFFFFF);
+        dot(g,left+px,top+pz,0xFFFFFFFF,1);
         double yaw=Math.toRadians(client.player.getYRot());
         for(int step=3;step<=8;step++) {
             int x=left+px-(int)Math.round(Math.sin(yaw)*step), z=top+pz+(int)Math.round(Math.cos(yaw)*step);
             g.fill(x,z,x+1,z+1,0xFFFFFFFF);
         }
-        if(hovered!=null) g.text(client.font,hovered,left,top+size+5,0xFFFFFFFF,true);
+        if(expanded) {
+            g.fill(left+px-10,top+pz-17,left+px+10,top+pz-6,0xD010151D);
+            g.text(client.font,"You",left+px-8,top+pz-16,0xFFFFFFFF,true);
+            if(Math.abs(mouseX-left-px)<=5 && Math.abs(mouseY-top-pz)<=5)
+                hovered=List.of(Component.literal("You: "+client.player.getBlockX()+", "+client.player.getBlockY()+", "+client.player.getBlockZ()));
+        }
+        return hovered;
+    }
+    private static void symbol(GuiGraphicsExtractor g,int x,int y,MapMarkerLayout.Kind kind) {
+        g.fill(x-3,y-3,x+4,y+4,0xC010151D);
+        switch(kind) {
+            case ITEM -> { g.fill(x,y-2,x+1,y+3,kind.color);g.fill(x-2,y,x+3,y+1,kind.color); }
+            case HOSTILE -> { for(int d=-2;d<=2;d++){g.fill(x+d,y+d,x+d+1,y+d+1,kind.color);g.fill(x+d,y-d,x+d+1,y-d+1,kind.color);} }
+            case PLAYER -> g.outline(x-2,y-2,5,5,kind.color);
+            case NEUTRAL -> {g.fill(x-1,y-2,x+2,y+3,kind.color);g.fill(x-2,y-1,x+3,y+2,kind.color);}
+        }
     }
     private static int sampleColor(LevelChunk chunk, int x, int z, int playerY) {
         int height = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x & 15, z & 15);

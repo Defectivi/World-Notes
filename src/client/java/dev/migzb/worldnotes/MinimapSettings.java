@@ -13,6 +13,7 @@ final class MinimapSettings {
     private static Path file() { return WorldNotesClient.configDirectory().resolve("worldnotes/minimap.json"); }
     boolean enabled = true;
     boolean items = true, neutralMobs = true, hostileMobs = true, players = true, rainbowHighlight = true;
+    boolean nearbyHeights = true;
     int radiusChunks = 32, size = 96, customX = 100, customY = 0;
     Position position = Position.TOP_RIGHT;
     void normalize() {

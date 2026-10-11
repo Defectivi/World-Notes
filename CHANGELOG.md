@@ -4,6 +4,9 @@ All notable changes to the mod are documented here.
 
 ## 1.0.0 stable
 
+- Improved radar readability with smaller category symbols, spatial grouping and counts, full hover details, nearby-height filtering, and a clearly labelled player ring.
+- Added clickable category filters and responsive expanded-map controls/sidebar, with a gentler terrain palette and clearer scale labels.
+
 - Expanded the minimap to a default 32-chunk radius, with persistent terrain history separated by world, dimension, and cave elevation.
 - Added M to open/close an expanded map, hover identification, and markers for items, neutral/passive mobs, hostile mobs, and other players received by the client.
 - Added settings above the hidden list for minimap visibility, marker categories, size, radius, corner/custom placement, and client-only rainbow tracking outlines.

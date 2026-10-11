@@ -27,6 +27,7 @@ final class MinimapSettingsScreen extends Screen {
         option(8,()->"Position: "+draft.position.name().replace('_',' '),()->draft.position=MinimapSettings.Position.values()[(draft.position.ordinal()+1)%5]);
         option(9,()->"Custom X: "+draft.customX+"%",()->draft.customX=(draft.customX+10)%110);
         option(10,()->"Custom Y: "+draft.customY+"%",()->draft.customY=(draft.customY+10)%110);
+        option(11,()->"Nearby heights: "+state(draft.nearbyHeights),()->draft.nearbyHeights=!draft.nearbyHeights);
         addRenderableWidget(Button.builder(Component.translatable("gui.done"),b->{if(WorldNotesMinimap.apply(draft))onClose();else failed=true;}).bounds(width/2-84,height-27,80,20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.cancel"),b->onClose()).bounds(width/2+4,height-27,80,20).build());
     }
