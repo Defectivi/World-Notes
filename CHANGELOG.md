@@ -4,6 +4,10 @@ All notable changes to the mod are documented here.
 
 ## 1.0.0 stable
 
+- Fixed repeated Nether cave-map resets by retaining unprocessed seeds/frontiers and rebuilding only for actual passage changes.
+- Updated cave floor colours in place for visual block changes, preserving the current scan and discovered terrain.
+- Added expired-budget, missing-seed, blocked-seed recovery, pending-player-position, repeated nonblocking-update, and floor-colour regression coverage.
+
 - Replaced custom-position percentage buttons with a live drag editor, precise saved anchors, Save & play, cancellation, and a reset-position action.
 - Shared placement geometry between the HUD and preview, preserved legacy positions, and kept maps inside window bounds after resizing.
 - Added placement precision, persistence, resize, edge-clamping, legacy migration, and draft-isolation regression coverage.

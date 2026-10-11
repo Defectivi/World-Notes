@@ -12,6 +12,50 @@ class CaveLayerTest {
         public int color(int x,int y,int z){return FLOOR;}
     };
     private void finish(CaveLayer layer,CaveLayer.Terrain terrain) {layer.advance(terrain,100000,Long.MAX_VALUE);}
+    @Test void seedSurvivesExpiredTickBudgetsAndDelayedChunkArrival() {
+        var layer=new CaveLayer(-2,4,0,1);
+        for(int tick=0;tick<20;tick++) {
+            layer.advance(rooms,4096,0);
+            assertFalse(layer.needsReseed(-2,4,0));
+        }
+        CaveLayer.Terrain missing=new CaveLayer.Terrain() {
+            public int space(int x,int y,int z){return -1;}
+            public int color(int x,int y,int z){return FLOOR;}
+        };
+        finish(layer,missing);assertFalse(layer.needsReseed(-2,4,0));
+        layer.retryUnknown();finish(layer,rooms);assertTrue(layer.contains(-2,4,0));
+    }
+    @Test void queuedPlayerPositionsDoNotRestartAnIncompleteScan() {
+        var layer=new CaveLayer(-2,4,0,1);
+        layer.advance(rooms,1,Long.MAX_VALUE);
+        assertFalse(layer.contains(-1,4,0));assertFalse(layer.needsReseed(-1,4,0));
+        finish(layer,rooms);assertFalse(layer.needsReseed(-1,4,0));
+        assertTrue(layer.needsReseed(3,4,0));
+    }
+    @Test void anInitiallyBlockedSeedStaysStableAndCanRecoverWhenItOpens() {
+        var layer=new CaveLayer(1,4,0,1);finish(layer,rooms);
+        assertFalse(layer.needsReseed(1,4,0));
+        assertFalse(layer.changed(1,4,0,false,FLOOR));
+        assertTrue(layer.changed(1,4,0,true,FLOOR));
+    }
+    @Test void repeatedNonBlockingNetherUpdatesKeepTheSameScanAndTopologyChangesInvalidateIt() {
+        var layer=new CaveLayer(-2,4,0,1);finish(layer,rooms);
+        long revision=layer.revision();
+        for(int tick=0;tick<100;tick++) {
+            assertFalse(layer.changed(-2,4,0,true,0xFFAA4422));
+            assertFalse(layer.changed(-2,3,0,false,FLOOR));
+        }
+        assertEquals(revision,layer.revision());assertTrue(layer.contains(-5,7,2));
+        assertTrue(layer.changed(-2,4,0,false,FLOOR));
+        assertTrue(layer.changed(1,4,0,true,FLOOR));
+        assertFalse(layer.changed(5,4,0,false,FLOOR));
+    }
+    @Test void floorColourUpdatesPatchTheMapWithoutDiscardingConnectivity() {
+        var layer=new CaveLayer(-2,4,0,1);finish(layer,rooms);
+        assertFalse(layer.changed(-2,3,0,false,0xFF884422));
+        int[] pixel=new int[1];layer.copyRegion(-2,0,1,pixel);
+        assertEquals(0xFF884422,pixel[0]);assertTrue(layer.contains(-5,7,2));
+    }
     @Test void sealedNeighbouringCaveIsNotRevealed() {
         var layer=new CaveLayer(-2,4,0,1);finish(layer,rooms);
         assertTrue(layer.contains(-5,7,2));

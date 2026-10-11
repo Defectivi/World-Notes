@@ -13,7 +13,7 @@ final class CaveLayer {
     }
     final int centerX,centerZ,minY,width,left,top;
     private final int seedY,plane;
-    private final BitSet checked=new BitSet(),connected=new BitSet(),waiting=new BitSet();
+    private final BitSet checked=new BitSet(),sampled=new BitSet(),connected=new BitSet(),waiting=new BitSet();
     private final ArrayDeque<Integer> queue=new ArrayDeque<>();
     private final int[] colors,floorY;
     private long revision;
@@ -33,6 +33,23 @@ final class CaveLayer {
         if(index>=0&&!checked.get(index)) {checked.set(index);queue.addLast(index);}
     }
     boolean contains(int x,int y,int z) {int index=index(x,y,z);return index>=0&&connected.get(index);}
+    /** An unprocessed seed/frontier is not evidence that the player entered a different cave. */
+    boolean needsReseed(int x,int y,int z) {
+        if(x==centerX&&y==seedY&&z==centerZ)return false;
+        int index=index(x,y,z);
+        return index<0||!connected.get(index)&&(!checked.get(index)||sampled.get(index));
+    }
+    /** Only changes to known connectivity rebuild the scan; visual floor changes patch a pixel. */
+    boolean changed(int x,int y,int z,boolean open,int color) {
+        int index=index(x,y,z);
+        if(index>=0&&sampled.get(index)&&connected.get(index)!=open
+                &&(touches(x,y,z)||x==centerX&&y==seedY&&z==centerZ))return true;
+        if(x>=left&&x<left+width&&z>=top&&z<top+width) {
+            int column=(z-top)*width+x-left;
+            if(floorY[column]==y+1&&colors[column]!=color){colors[column]=color;revision++;}
+        }
+        return false;
+    }
     boolean touches(int x,int y,int z) {
         return contains(x,y,z)||contains(x-1,y,z)||contains(x+1,y,z)||contains(x,y-1,z)
                 ||contains(x,y+1,z)||contains(x,y,z-1)||contains(x,y,z+1);
@@ -49,6 +66,7 @@ final class CaveLayer {
             int y=minY+index/plane,z=top+column/width,x=left+column%width;
             int space=terrain.space(x,y,z);
             if(space<0){waiting.set(index);continue;}
+            sampled.set(index);
             if(space==0)continue;
             connected.set(index);revision++;
             if(colors[column]==TerrainCache.UNKNOWN)colors[column]=0xFF484F59;

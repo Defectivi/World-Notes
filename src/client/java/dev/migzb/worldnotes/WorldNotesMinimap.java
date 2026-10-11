@@ -68,7 +68,14 @@ final class WorldNotesMinimap {
     static int coverage() { return coverage; }
     static String layerLabel(){return cave==null?"Surface":"Cave Y "+cave.minY+".."+(cave.minY+15);}
     static void terrainChanged(BlockPos position) {
-        if(cave!=null&&cave.touches(position.getX(),position.getY(),position.getZ()))caveDirty=true;
+        if(cave==null||level==null)return;
+        LevelChunk chunk=level.getChunkSource().getChunk(Math.floorDiv(position.getX(),16),Math.floorDiv(position.getZ(),16),false);
+        if(chunk==null)return;
+        var state=chunk.getBlockState(position);
+        boolean open=chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,position.getX()&15,position.getZ()&15)>position.getY()
+                &&!state.isCollisionShapeFullBlock(level,position);
+        int rgb=state.getMapColor(level,position).col;
+        if(cave.changed(position.getX(),position.getY(),position.getZ(),open,rgb==0?0xFF484F59:0xFF000000|rgb))caveDirty=true;
     }
     private static boolean underground(Minecraft client) {
         int x=client.player.getBlockX(),z=client.player.getBlockZ();
@@ -110,7 +117,7 @@ final class WorldNotesMinimap {
         if(below) {
             int x=client.player.getBlockX(),y=client.player.getBlockY(),z=client.player.getBlockZ();
             if(cave==null || caveDirty || cave.width!=radius*32+1 || Math.abs((long)x-cave.centerX)>16 || Math.abs((long)z-cave.centerZ)>16
-                    || !cave.contains(x,y,z)) {
+                    || cave.needsReseed(x,y,z)) {
                 cave=new CaveLayer(x,y,z,radius);imageRevision=-1;caveDirty=false;
             }
             if(tickCount%20==0)cave.retryUnknown();
