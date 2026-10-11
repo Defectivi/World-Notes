@@ -34,7 +34,7 @@ public final class WorldNotesHud {
 
         int center = minecraft.getWindow().getGuiScaledWidth() / 2;
         int direction = directionIndex(minecraft.player.getYRot());
-        String label = directionName(direction);
+        String label = MapNavigation.facing(minecraft.player.getYRot());
         int labelWidth = minecraft.font.width(label);
         graphics.text(minecraft.font, label, center - labelWidth / 2, 8, directionColor(direction), true);
 

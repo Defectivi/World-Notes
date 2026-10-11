@@ -21,6 +21,7 @@ java {
 }
 sourceSets.main {
     java.srcDir '../src/client/java'
+    java.srcDir '../src/compat/texture-stable/java'
     java.srcDir "../src/compat/${target.minecraft == '26.1.2' ? '26.1.2' : 'modern'}/java"
     resources {
         srcDir '../src/main/resources'

@@ -27,6 +27,7 @@ loom {
 }
 
 sourceSets.client.java.srcDir 'src/fabric/java'
+sourceSets.client.java.srcDir "src/compat/texture-${channel == 'snapshot' ? 'snapshot' : 'stable'}/java"
 sourceSets.client.java.srcDir "src/compat/${target.minecraft == '26.1.2' ? '26.1.2' : 'modern'}/java"
 
 dependencies {

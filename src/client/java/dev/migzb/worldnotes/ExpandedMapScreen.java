@@ -11,6 +11,7 @@ import java.util.List;
 final class ExpandedMapScreen extends Screen {
     private MapViewLayout layout;
     private boolean saveFailed;
+    private Button zoomButton;
     ExpandedMapScreen() { super(Component.literal("World Notes map")); }
 
     private boolean enabled(MapMarkerLayout.Kind kind) {
@@ -45,8 +46,9 @@ final class ExpandedMapScreen extends Screen {
         int buttonWidth = Math.min(100, (width - 28) / 3);
         addRenderableWidget(Button.builder(Component.literal("Settings"), b -> WorldNotesClient.setScreen(minecraft, new MinimapSettingsScreen(this)))
                 .bounds(8, height - 27, buttonWidth, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Zoom (N)"), b -> WorldNotesMinimap.zoom(minecraft))
-                .bounds((width - buttonWidth) / 2, height - 27, buttonWidth, 20).build());
+        zoomButton=addRenderableWidget(Button.builder(Component.literal("Zoom " + WorldNotesMinimap.settings().zoom + "x"), b -> WorldNotesMinimap.zoom(minecraft))
+                .bounds((width - buttonWidth) / 2, height - 27, buttonWidth, 20)
+                .tooltip(Tooltip.create(Component.literal("N: zoom in. Range follows render distance."))).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
                 .bounds(width - buttonWidth - 8, height - 27, buttonWidth, 20).build());
     }
@@ -64,14 +66,15 @@ final class ExpandedMapScreen extends Screen {
         int left = layout.left(), top = layout.top(), size = layout.size();
         int center = left + size / 2;
         g.centeredText(font, BookmarkScreen.dimensionComponent(WorldNotesClient.dimension(minecraft.level)), center, 6, 0xFFFFFFFF);
-        g.centeredText(font, Component.literal(WorldNotesMinimap.span() + " blocks across | North up"), center, 18, WorldNotesTheme.MUTED);
+        zoomButton.setMessage(Component.literal("Zoom " + WorldNotesMinimap.settings().zoom + "x"));
+        g.centeredText(font, Component.literal("Facing " + MapNavigation.facing(minecraft.player.getYRot()) + " | " + WorldNotesMinimap.radius() + "ch"), center, 18, WorldNotesTheme.MUTED);
         g.fill(left - 2, top - 2, left + size + 2, top + size + 2, 0xFF778A9B);
         List<Component> hovered = WorldNotesMinimap.renderMap(g, minecraft, left, top, size, x, y, true);
         String hint = hovered.isEmpty() ? "Hover markers for details" : hovered.getFirst().getString();
         if (layout.sidebar()) {
             int textX = layout.legendX(), textY = layout.legendY() + 94;
-            List<Component> help = List.of(Component.literal("White ring: You"), Component.literal("Numbers: entity groups"),
-                    Component.literal("Dark: unexplored"), Component.literal(WorldNotesMinimap.settings().nearbyHeights ? "Nearby Y: +/-24 blocks" : "All heights shown"));
+            List<Component> help = List.of(Component.literal("White arrow: You"), Component.literal("Range: " + WorldNotesMinimap.radius() + " chunks"),
+                    Component.literal("Numbers: entity groups"), Component.literal(WorldNotesMinimap.settings().nearbyHeights ? "Nearby Y: +/-24 blocks" : "All heights shown"));
             for (Component line : help) {
                 for (var wrapped : font.split(line, layout.legendWidth())) {
                     g.text(font, wrapped, textX, textY, WorldNotesTheme.MUTED, false); textY += 11;

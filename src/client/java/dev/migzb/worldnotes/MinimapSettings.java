@@ -14,10 +14,10 @@ final class MinimapSettings {
     boolean enabled = true;
     boolean items = true, neutralMobs = true, hostileMobs = true, players = true, rainbowHighlight = true;
     boolean nearbyHeights = true;
-    int radiusChunks = 32, size = 96, customX = 100, customY = 0;
+    int zoom = 1, size = 96, customX = 100, customY = 0;
     Position position = Position.TOP_RIGHT;
     void normalize() {
-        if (radiusChunks != 8 && radiusChunks != 16 && radiusChunks != 32) radiusChunks = 32;
+        if (zoom != 1 && zoom != 2 && zoom != 4 && zoom != 8 && zoom != 16) zoom = 1;
         if (size != 96 && size != 128 && size != 160) size = 96;
         if (position == null) position = Position.TOP_RIGHT;
         customX = Math.clamp(customX, 0, 100); customY = Math.clamp(customY, 0, 100);

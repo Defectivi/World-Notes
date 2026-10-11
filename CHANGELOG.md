@@ -4,6 +4,10 @@ All notable changes to the mod are documented here.
 
 ## 1.0.0 stable
 
+- Replaced coarse terrain samples with 256 independent block colours per chunk and an efficient nearest-neighbour map texture; introduced a separately versioned block-resolution cache.
+- Matched terrain and entity range to Minecraft's effective render distance, replacing the fixed radius with 1x–16x visual zoom.
+- Added a rotating player arrow and eight-direction facing labels, with snapshot-specific texture API support.
+
 - Improved radar readability with smaller category symbols, spatial grouping and counts, full hover details, nearby-height filtering, and a clearly labelled player ring.
 - Added clickable category filters and responsive expanded-map controls/sidebar, with a gentler terrain palette and clearer scale labels.
 

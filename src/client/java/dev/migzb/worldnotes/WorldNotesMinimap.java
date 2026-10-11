@@ -13,25 +13,32 @@ import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
 import java.util.*;
 
 /** Never requests server chunks: terrain and entity information are client observations. */
 final class WorldNotesMinimap {
-    private static final int GRID = 128, UNKNOWN = TerrainCache.UNKNOWN;
+    private static final int UNKNOWN = TerrainCache.UNKNOWN;
+    private static final Identifier TERRAIN_TEXTURE = Identifier.fromNamespaceAndPath("worldnotes", "terrain_map");
+    private static WorldNotesMapTexture terrainTexture;
+    private static int textureSize, radius = 1, imageOriginX, imageOriginZ;
+    private static long imageRevision = -1;
+    private static boolean textureDirty;
     private static final BlockPos.MutableBlockPos POSITION = new BlockPos.MutableBlockPos();
     private static MinimapSettings settings;
     private static ClientLevel level;
     private static TerrainCache cache;
     private static String context;
     private static int originX, originZ, cursor, tickCount;
-    private static final int[] pixels = new int[GRID*GRID];
+    private static int[] pixels = new int[0];
     private static List<Bookmark> markers = List.of();
     private static String markerProfile;
     private static long markerRevision = -1;
-    private static final List<int[]> OFFSETS = offsets();
-    private static List<int[]> offsets() {
+    private static List<int[]> offsets = List.of();
+    private static List<int[]> offsets(int radius) {
         List<int[]> result = new ArrayList<>();
-        for (int z=-33; z<=33; z++) for (int x=-33; x<=33; x++) result.add(new int[]{x,z});
+        for (int z=-radius; z<=radius; z++) for (int x=-radius; x<=radius; x++) result.add(new int[]{x,z});
         result.sort(Comparator.comparingInt(a -> a[0]*a[0]+a[1]*a[1]));
         return List.copyOf(result);
     }
@@ -48,46 +55,62 @@ final class WorldNotesMinimap {
     }
     static void zoom(Minecraft client) {
         MinimapSettings draft = settings.copy();
-        draft.radiusChunks = draft.radiusChunks == 32 ? 8 : draft.radiusChunks * 2;
+        draft.zoom = draft.zoom == 16 ? 1 : draft.zoom * 2;
         if (!apply(draft)) { WorldNotesGui.overlay(client, Component.translatable("worldnotes.save_failed")); return; }
         cursor = 0;
-        if (client.player != null) WorldNotesGui.overlay(client, Component.literal("Map radius: " + settings.radiusChunks + " chunks"));
+        if (client.player != null) WorldNotesGui.overlay(client, Component.literal("Map zoom: " + settings.zoom + "x (render distance: " + radius + " chunks)"));
     }
-    static int span() { return settings.radiusChunks * 32; }
+    static int span() { return Math.max(16, radius * 32 / settings.zoom); }
+    static int radius() { return radius; }
     static void tick(Minecraft client) {
-        if (client.level == null || client.player == null) { level=null; cache=null; context=null; return; }
+        if (client.level == null || client.player == null) {
+            level=null; cache=null; context=null; pixels=new int[0]; imageRevision=-1;
+            if(terrainTexture!=null) { terrainTexture.close(); terrainTexture=null; textureSize=0; }
+            return;
+        }
         if (!settings.enabled && !(WorldNotesGui.screen(client) instanceof ExpandedMapScreen)) return;
+        int renderRadius=Math.clamp(client.options.getEffectiveRenderDistance(),1,64);
+        if(radius!=renderRadius || offsets.isEmpty()) { radius=renderRadius; offsets=offsets(radius); cursor=0; }
         String profile = WorldNotesClient.profile(client);
         if (!profile.equals(markerProfile) || markerRevision != BookmarkStore.revision()) {
             markers = BookmarkStore.forProfile(profile); markerProfile=profile; markerRevision=BookmarkStore.revision();
         }
         String band = client.level.dimensionType().hasCeiling() && client.player.getBlockY()<client.level.dimensionType().logicalHeight()
                 ? "cave:"+Math.floorDiv(client.player.getBlockY(),32) : "surface";
-        String nextContext = profile+"\n"+WorldNotesClient.dimension(client.level)+"\n"+band;
+        // The versioned context preserves old coarse history without treating it as block-level data.
+        String nextContext = "blocks-v2\n"+profile+"\n"+WorldNotesClient.dimension(client.level)+"\n"+band;
         if (level != client.level || !nextContext.equals(context)) {
             level=client.level; context=nextContext; cursor=0;
             cache=new TerrainCache(WorldNotesClient.configDirectory().resolve("worldnotes/terrain"), context);
+            imageRevision=-1;
         }
         int cx=Math.floorDiv(client.player.getBlockX(),16), cz=Math.floorDiv(client.player.getBlockZ(),16);
         originX=client.player.getBlockX()-span()/2; originZ=client.player.getBlockZ()-span()/2;
         int samples=0;
         for (int work=0; work<64; work++) {
-            int[] offset=OFFSETS.get(cursor++ % OFFSETS.size());
-            if (Math.abs(offset[0])>settings.radiusChunks+1 || Math.abs(offset[1])>settings.radiusChunks+1) continue;
+            int[] offset=offsets.get(cursor++ % offsets.size());
             int x=cx+offset[0], z=cz+offset[1];
             cache.request(x,z);
-            if (samples>=8 || cache.has(x,z) || !cache.ready(x,z)) continue;
+            if (samples>=2 || cache.has(x,z) || !cache.ready(x,z)) continue;
             LevelChunk chunk=level.getChunkSource().getChunk(x,z,false);
             if (chunk==null) continue;
-            int[] colors=new int[16];
-            for (int row=0; row<4; row++) for (int col=0; col<4; col++)
-                colors[row*4+col]=sampleColor(chunk,x*16+col*4+2,z*16+row*4+2,client.player.getBlockY());
+            int[] colors=new int[TerrainTileFile.SAMPLES];
+            for (int row=0; row<16; row++) for (int col=0; col<16; col++)
+                colors[row*16+col]=sampleColor(chunk,x*16+col,z*16+row,client.player.getBlockY());
             cache.store(x,z,colors); samples++;
         }
-        cursor %= OFFSETS.size();
-        if (++tickCount % 100 == 0) cache.trim(cx,cz,settings.radiusChunks+3);
-        for(int row=0;row<GRID;row++) for(int col=0;col<GRID;col++)
-            pixels[row*GRID+col]=cache.color(originX+col*span()/GRID,originZ+row*span()/GRID);
+        cursor %= offsets.size();
+        if (++tickCount % 100 == 0) cache.trim(cx,cz,radius+2);
+        int width=span();
+        if(tickCount%4==0 || pixels.length!=width*width || imageRevision<0
+                || Math.abs((long)originX-imageOriginX)>width/4 || Math.abs((long)originZ-imageOriginZ)>width/4) {
+            long revision=cache.revision();
+            if(pixels.length!=width*width || imageOriginX!=originX || imageOriginZ!=originZ || imageRevision!=revision) {
+                pixels=new int[width*width];
+                cache.copyRegion(originX,originZ,width,pixels);
+                imageOriginX=originX; imageOriginZ=originZ; imageRevision=revision; textureDirty=true;
+            }
+        }
     }
     static int[] bounds(Minecraft client) {
         int width=client.getWindow().getGuiScaledWidth(), height=client.getWindow().getGuiScaledHeight();
@@ -115,30 +138,39 @@ final class WorldNotesMinimap {
         WorldNotesTheme.panel(graphics,b[0]-3,b[1]-3,b[2]+6,b[2]+17,WorldNotesTheme.dimensionAccent(WorldNotesClient.dimension(client.level)));
         renderMap(graphics,client,b[0],b[1],b[2],-1,-1,false);
         graphics.text(client.font,"N",b[0]+b[2]/2-3,b[1]-13,0xFFFFFFFF,true);
-        graphics.text(client.font,span()+" blocks across",b[0]+2,b[1]+b[2]+3,0xFFD4DEE9,true);
+        graphics.text(client.font,MapNavigation.facing(client.player.getYRot()),b[0]+2,b[1]+b[2]+3,0xFFD4DEE9,true);
     }
-    private static int coordinate(double value,int origin,int size) { return (int)Math.floor((value-origin)*size/span()); }
+    private static int coordinate(double value,int origin,int size) { return (int)Math.floor((value-origin)*size/Math.sqrt(pixels.length)); }
     private static void dot(GuiGraphicsExtractor g,int x,int y,int color,int radius) {
         g.fill(x-radius-1,y-radius-1,x+radius+2,y+radius+2,0xFF10151D);
         g.fill(x-radius,y-radius,x+radius+1,y+radius+1,color);
     }
     static List<Component> renderMap(GuiGraphicsExtractor g,Minecraft client,int left,int top,int size,int mouseX,int mouseY,boolean expanded) {
         if (cache==null || level!=client.level || client.player==null) return List.of();
-        int grid=Math.min(GRID,size);
-        for (int row=0;row<grid;row++) {
-            for (int col=0;col<grid;) {
-                int color=pixels[row*GRID/grid*GRID+col*GRID/grid],end=col+1;
-                while (end<grid && pixels[row*GRID/grid*GRID+end*GRID/grid]==color) end++;
-                // A gentler terrain palette keeps radar symbols legible over grass and water.
-                int muted=color==UNKNOWN?UNKNOWN:0xFF000000|((((color>>16)&255)*4/5+12)<<16)|((((color>>8)&255)*4/5+12)<<8)|((color&255)*4/5+12);
-                g.fill(left+col*size/grid,top+row*size/grid,left+end*size/grid,top+(row+1)*size/grid,muted); col=end;
-            }
+        if(pixels.length==0) return List.of();
+        int width=(int)Math.sqrt(pixels.length);
+        if(terrainTexture==null || textureSize!=width || terrainTexture.image()==null || terrainTexture.image().isClosed()) {
+            if(terrainTexture!=null) terrainTexture.close();
+            terrainTexture=new WorldNotesMapTexture(client,TERRAIN_TEXTURE,width);
+            textureSize=width; textureDirty=true;
         }
+        if(textureDirty) {
+            var image=terrainTexture.image();
+            for(int z=0;z<width;z++) for(int x=0;x<width;x++) {
+                int color=pixels[z*width+x];
+                int muted=color==UNKNOWN?UNKNOWN:0xFF000000|((((color>>16)&255)*4/5+12)<<16)|((((color>>8)&255)*4/5+12)<<8)|((color&255)*4/5+12);
+                image.setPixel(x,z,muted);
+            }
+            terrainTexture.upload(); textureDirty=false;
+        }
+        g.blit(RenderPipelines.GUI_TEXTURED,TERRAIN_TEXTURE,left,top,0,0,size,size,width,width,width,width);
         String dimension=WorldNotesClient.dimension(level);
         List<Component> hovered=List.of();
         List<MapMarkerLayout.Marker> observations=new ArrayList<>();
         for (Entity entity:level.entitiesForRendering()) {
             if (entity==client.player || entity.isRemoved()) continue;
+            if(!MapNavigation.inRange(Math.floorDiv(entity.getBlockX(),16),Math.floorDiv(entity.getBlockZ(),16),
+                    Math.floorDiv(client.player.getBlockX(),16),Math.floorDiv(client.player.getBlockZ(),16),radius)) continue;
             if(settings.nearbyHeights && !(entity instanceof Player) && Math.abs(entity.getY()-client.player.getY())>24) continue;
             MapMarkerLayout.Kind kind;
             if (entity instanceof ItemEntity && settings.items) kind=MapMarkerLayout.Kind.ITEM;
@@ -147,7 +179,7 @@ final class WorldNotesMinimap {
             else if (entity instanceof Enemy && !(entity instanceof NeutralMob) && settings.hostileMobs) kind=MapMarkerLayout.Kind.HOSTILE;
             else if (entity instanceof Mob && !(entity instanceof Enemy) && settings.neutralMobs) kind=MapMarkerLayout.Kind.NEUTRAL;
             else continue;
-            int x=coordinate(entity.getX(),originX,size),z=coordinate(entity.getZ(),originZ,size);
+            int x=coordinate(entity.getX(),imageOriginX,size),z=coordinate(entity.getZ(),imageOriginZ,size);
             String name=entity instanceof ItemEntity item ? item.getItem().getHoverName().getString()+" x"+item.getItem().getCount() : entity.getDisplayName().getString();
             observations.add(new MapMarkerLayout.Marker(x,z,kind,name+" ("+entity.getBlockX()+", "+entity.getBlockY()+", "+entity.getBlockZ()+")"));
         }
@@ -180,29 +212,32 @@ final class WorldNotesMinimap {
         }
         for (Bookmark bookmark:markers) {
             if(bookmark.hidden || !dimension.equals(bookmark.dimension)) continue;
-            int x=coordinate(bookmark.x,originX,size),z=coordinate(bookmark.z,originZ,size);
+            int x=coordinate(bookmark.x,imageOriginX,size),z=coordinate(bookmark.z,imageOriginZ,size);
             boolean tracked=WorldNotesClient.isTracked(bookmark);
             if(tracked) { x=Math.clamp(x,3,size-4); z=Math.clamp(z,3,size-4); }
             else if(x<3||z<3||x>=size-3||z>=size-3) continue;
             dot(g,left+x,top+z,tracked?WorldNotesTheme.ACCENT:0xFFB5A0FF,2);
             if(expanded && Math.abs(mouseX-left-x)<=5 && Math.abs(mouseY-top-z)<=5) hovered=List.of(bookmark.displayName(),Component.literal(BookmarkScreen.coordinates(bookmark)));
         }
-        int px=coordinate(client.player.getX(),originX,size),pz=coordinate(client.player.getZ(),originZ,size);
-        g.fill(left+px-4,top+pz-4,left+px+5,top+pz+5,0xFF10151D);
-        g.outline(left+px-4,top+pz-4,9,9,0xFFFFFFFF);
-        dot(g,left+px,top+pz,0xFFFFFFFF,1);
-        double yaw=Math.toRadians(client.player.getYRot());
-        for(int step=3;step<=8;step++) {
-            int x=left+px-(int)Math.round(Math.sin(yaw)*step), z=top+pz+(int)Math.round(Math.cos(yaw)*step);
-            g.fill(x,z,x+1,z+1,0xFFFFFFFF);
-        }
+        int px=coordinate(client.player.getX(),imageOriginX,size),pz=coordinate(client.player.getZ(),imageOriginZ,size);
+        arrow(g,left+px,top+pz,client.player.getYRot());
         if(expanded) {
-            g.fill(left+px-10,top+pz-17,left+px+10,top+pz-6,0xD010151D);
-            g.text(client.font,"You",left+px-8,top+pz-16,0xFFFFFFFF,true);
+            g.fill(left+px-10,top+pz-25,left+px+10,top+pz-14,0xD010151D);
+            g.text(client.font,"You",left+px-8,top+pz-24,0xFFFFFFFF,true);
             if(Math.abs(mouseX-left-px)<=5 && Math.abs(mouseY-top-pz)<=5)
-                hovered=List.of(Component.literal("You: "+client.player.getBlockX()+", "+client.player.getBlockY()+", "+client.player.getBlockZ()));
+                hovered=List.of(Component.literal("You: "+client.player.getBlockX()+", "+client.player.getBlockY()+", "+client.player.getBlockZ()),
+                        Component.literal("Facing "+MapNavigation.facing(client.player.getYRot())));
         }
         return hovered;
+    }
+    private static void arrow(GuiGraphicsExtractor g,int centerX,int centerZ,float yaw) {
+        for(int z=-9;z<=9;z++) for(int x=-9;x<=9;x++) {
+            if(MapNavigation.arrowPixel(x,z,yaw) || MapNavigation.arrowPixel(x-1,z,yaw) || MapNavigation.arrowPixel(x+1,z,yaw)
+                    || MapNavigation.arrowPixel(x,z-1,yaw) || MapNavigation.arrowPixel(x,z+1,yaw))
+                g.fill(centerX+x,centerZ+z,centerX+x+1,centerZ+z+1,0xFF10151D);
+        }
+        for(int z=-8;z<=8;z++) for(int x=-8;x<=8;x++) if(MapNavigation.arrowPixel(x,z,yaw))
+            g.fill(centerX+x,centerZ+z,centerX+x+1,centerZ+z+1,0xFFFFFFFF);
     }
     private static void symbol(GuiGraphicsExtractor g,int x,int y,MapMarkerLayout.Kind kind) {
         g.fill(x-3,y-3,x+4,y+4,0xC010151D);
