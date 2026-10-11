@@ -2,6 +2,15 @@
 
 All notable changes to the mod are documented here.
 
+## 0.2.0-beta
+
+- Added a client-side north-up terrain minimap with player direction and dimension-aware bookmark markers.
+- Added persistent minimap visibility and three zoom levels, controlled by configurable M/N keybindings.
+- Bounded terrain sampling per tick, reused samples when moving, and avoided requesting unloaded chunks.
+- Moved tracked-bookmark guidance below the minimap and respected hidden HUD mode.
+- Added separate exact-version builds for Minecraft 26.3, 26.4-snapshot-3, and 26.2.
+- Updated Fabric Loader, Fabric API, Loom, and Gradle; added a three-version CI build matrix.
+
 ## 0.1.4-stable
 
 This is the main branch and the stable release line for `0.1.4-stable`.

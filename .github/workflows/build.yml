@@ -1,0 +1,21 @@
+name: Build supported Minecraft versions
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [legacy, release, snapshot]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: bash ./gradlew build -Pchannel=${{ matrix.channel }} --console=plain
+      - uses: actions/upload-artifact@v4
+        with:
+          name: worldnotes-${{ matrix.channel }}
+          path: build/libs/*.jar

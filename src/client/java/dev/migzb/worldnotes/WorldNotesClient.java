@@ -11,12 +11,13 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
-import org.lwjgl.glfw.GLFW;
 
 public final class WorldNotesClient implements ClientModInitializer {
     private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
             net.minecraft.resources.Identifier.fromNamespaceAndPath("worldnotes", "general"));
     private static KeyMapping openManager;
+    private static KeyMapping toggleMinimap;
+    private static KeyMapping zoomMinimap;
     private static String trackedId;
     private static String trackedProfile;
     private static Bookmark trackedEntry;
@@ -24,12 +25,20 @@ public final class WorldNotesClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         BookmarkStore.load();
+        WorldNotesMinimap.initialize();
+        toggleMinimap = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.worldnotes.toggle_minimap", InputConstants.KEY_M, CATEGORY));
+        zoomMinimap = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.worldnotes.zoom_minimap", InputConstants.KEY_N, CATEGORY));
         openManager = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.worldnotes.open_manager", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, CATEGORY));
+                "key.worldnotes.open_manager", InputConstants.KEY_B, CATEGORY));
         HudElementRegistry.addLast(net.minecraft.resources.Identifier.fromNamespaceAndPath("worldnotes", "coordinates"),
                 WorldNotesHud::render);
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openManager.consumeClick()) setScreen(client, new BookmarkScreen());
+            while (toggleMinimap.consumeClick()) WorldNotesMinimap.toggle(client);
+            while (zoomMinimap.consumeClick()) WorldNotesMinimap.zoom(client);
+            WorldNotesMinimap.tick(client);
         });
     }
 

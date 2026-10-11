@@ -3,7 +3,15 @@ plugins {
     id 'maven-publish'
 }
 
-version = project.mod_version
+def targets = [
+    release: [minecraft: '26.3', api: '0.162.0+26.3'],
+    snapshot: [minecraft: '26.4-snapshot-3', api: '0.162.2+26.4'],
+    legacy: [minecraft: '26.2', api: '0.161.0+26.2']
+]
+def channel = providers.gradleProperty('channel').getOrElse('release')
+if (!targets.containsKey(channel)) throw new GradleException("Unknown channel '${channel}': use release, snapshot, or legacy")
+def target = targets[channel]
+version = "${project.mod_version}+mc${target.minecraft}"
 group = project.maven_group
 
 loom {
@@ -17,13 +25,13 @@ loom {
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    minecraft "com.mojang:minecraft:${target.minecraft}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${target.api}"
 }
 
 def modVersion = project.version
-def minecraftDependency = project.minecraft_dependency
+def minecraftDependency = target.minecraft
 
 processResources {
     inputs.property "version", modVersion

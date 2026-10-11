@@ -17,7 +17,8 @@ public final class WorldNotesHud {
     public static void render(net.minecraft.client.gui.GuiGraphicsExtractor graphics,
                               net.minecraft.client.DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || minecraft.level == null) return;
+        if (minecraft.player == null || minecraft.level == null || minecraft.gui.hud.isHidden()) return;
+        WorldNotesMinimap.render(graphics, minecraft);
 
         Component dimension = BookmarkScreen.dimensionComponent(WorldNotesClient.dimension(minecraft.level));
         String coordinates = "X: " + minecraft.player.getBlockX()
@@ -64,9 +65,10 @@ public final class WorldNotesHud {
                 minecraft.font.width(dimension))) + 12;
         int right = minecraft.getWindow().getGuiScaledWidth() - 4;
         int left = right - width;
-        graphics.text(minecraft.font, title, left + 6, 30, WHITE, true);
-        graphics.text(minecraft.font, destination, left + 6, 43, WHITE, true);
-        graphics.text(minecraft.font, dimension, left + 6, 56, WHITE, true);
+        int top = WorldNotesMinimap.visible(minecraft) ? 18 + WorldNotesMinimap.SIZE + 20 : 30;
+        graphics.text(minecraft.font, title, left + 6, top, WHITE, true);
+        graphics.text(minecraft.font, destination, left + 6, top + 13, WHITE, true);
+        graphics.text(minecraft.font, dimension, left + 6, top + 26, WHITE, true);
     }
 
     private static String trackingDirection(Minecraft minecraft, Bookmark bookmark) {
