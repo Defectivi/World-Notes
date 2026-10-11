@@ -74,13 +74,13 @@ final class ExpandedMapScreen extends Screen {
         g.centeredText(font, BookmarkScreen.dimensionComponent(WorldNotesClient.dimension(minecraft.level)), center, 6, 0xFFFFFFFF);
         g.centeredText(font, Component.literal("Facing ").append(CompassColors.label(MapNavigation.facing(minecraft.player.getYRot()),WorldNotesClient.dimension(minecraft.level)))
                 .append(" | " + WorldNotesMinimap.radius() + "ch"), center, 18, WorldNotesTheme.MUTED);
-        g.centeredText(font,Component.literal(WorldNotesMinimap.settings().zoom+"x"),width/2,height-21,WorldNotesTheme.MUTED);
+        g.centeredText(font,Component.literal("Scroll: "+WorldNotesMinimap.settings().zoom+"x"),width/2,height-21,WorldNotesTheme.MUTED);
         g.fill(left - 2, top - 2, left + size + 2, top + size + 2, 0xFF778A9B);
         List<Component> hovered = WorldNotesMinimap.renderMap(g, minecraft, left, top, size, x, y, true);
-        String hint = hovered.isEmpty() ? "Scroll to zoom | Terrain " + WorldNotesMinimap.coverage() + "%" : hovered.getFirst().getString();
+        String hint = hovered.isEmpty() ? WorldNotesMinimap.layerLabel()+" | Terrain " + WorldNotesMinimap.coverage() + "%" : hovered.getFirst().getString();
         if (layout.sidebar()) {
             int textX = layout.legendX(), textY = layout.legendY() + 94;
-            List<Component> help = List.of(Component.literal("Scroll to zoom"), Component.literal("Terrain: " + WorldNotesMinimap.coverage() + "%"),
+            List<Component> help = List.of(Component.literal(WorldNotesMinimap.layerLabel()),Component.literal("Terrain: " + WorldNotesMinimap.coverage() + "%"),
                     Component.literal("Numbers: entity groups"), Component.literal(WorldNotesMinimap.settings().nearbyHeights ? "Nearby Y: +/-24 blocks" : "All heights shown"));
             for (Component line : help) {
                 for (var wrapped : font.split(line, layout.legendWidth())) {

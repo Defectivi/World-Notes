@@ -50,6 +50,7 @@ public final class WorldNotesClient {
         WorldNotesBlockHighlight.update(client);
     }
     static boolean mapKey(net.minecraft.client.input.KeyEvent event) { return toggleMinimap.matches(event); }
+    public static void terrainChanged(net.minecraft.core.BlockPos position) {WorldNotesMinimap.terrainChanged(position);}
     static boolean zoomKey(net.minecraft.client.input.KeyEvent event) { return zoomMinimap.matches(event); }
 
     public static void setScreen(Minecraft client, Screen screen) {

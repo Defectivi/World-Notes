@@ -5,6 +5,15 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StructureCheatsTest {
+    @Test void operatorLevelAndBothCommandsAreRequiredTogether() {
+        var operator=net.minecraft.server.permissions.LevelBasedPermissionSet.GAMEMASTER;
+        var moderator=net.minecraft.server.permissions.LevelBasedPermissionSet.MODERATOR;
+        assertTrue(StructureCheats.allowed(operator,true,true));
+        assertFalse(StructureCheats.allowed(moderator,true,true));
+        assertFalse(StructureCheats.allowed(operator,false,true));
+        assertFalse(StructureCheats.allowed(operator,true,false));
+        assertFalse(StructureCheats.allowed(net.minecraft.server.permissions.PermissionSet.NO_PERMISSIONS,true,true));
+    }
     private Component located(String name,Object x,Object y,Object z) {
         return Component.translatable("commands.locate.structure.success",name,
                 Component.translatable("chat.coordinates",x,y,z),320);

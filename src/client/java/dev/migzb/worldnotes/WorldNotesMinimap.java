@@ -29,6 +29,8 @@ final class WorldNotesMinimap {
     private static MinimapSettings settings;
     private static ClientLevel level;
     private static TerrainCache cache;
+    private static CaveLayer cave;
+    private static boolean caveDirty;
     private static String context;
     private static int originX, originZ, cursor, tickCount;
     private static int scanX=Integer.MIN_VALUE,scanZ,scanZoom;
@@ -63,33 +65,72 @@ final class WorldNotesMinimap {
     static int span() { return Math.max(16, radius * 32 / settings.zoom); }
     static int radius() { return radius; }
     static int coverage() { return coverage; }
+    static String layerLabel(){return cave==null?"Surface":"Cave Y "+cave.minY+".."+(cave.minY+15);}
+    static void terrainChanged(BlockPos position) {
+        if(cave!=null&&cave.touches(position.getX(),position.getY(),position.getZ()))caveDirty=true;
+    }
+    private static boolean underground(Minecraft client) {
+        int x=client.player.getBlockX(),z=client.player.getBlockZ();
+        LevelChunk chunk=client.level.getChunkSource().getChunk(Math.floorDiv(x,16),Math.floorDiv(z,16),false);
+        if(chunk==null)return cave!=null;
+        int roof=chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,x&15,z&15);
+        POSITION.set(x,roof,z);
+        return roof>client.player.getEyeY() && chunk.getBlockState(POSITION).getFluidState().isEmpty();
+    }
     static void tick(Minecraft client) {
         if (client.level == null || client.player == null) {
-            level=null; cache=null; context=null; pixels=new int[0]; imageRevision=-1;
+            level=null; cache=null; cave=null; context=null; pixels=new int[0]; imageRevision=-1;
             if(terrainTexture!=null) { terrainTexture.close(); terrainTexture=null; textureSize=0; }
             return;
         }
         if (!settings.enabled && !(WorldNotesGui.screen(client) instanceof ExpandedMapScreen)) return;
         int renderRadius=Math.clamp(client.options.getEffectiveRenderDistance(),1,64);
         if(radius!=renderRadius || offsets.isEmpty() || scanZoom!=settings.zoom) {
-            radius=renderRadius; offsets=MapNavigation.terrainOffsets(radius,settings.zoom); cursor=0; scanX=Integer.MIN_VALUE;
+            radius=renderRadius; offsets=MapNavigation.terrainOffsets(radius,settings.zoom); cursor=0; scanX=Integer.MIN_VALUE;scanZoom=settings.zoom;
         }
         String profile = WorldNotesClient.profile(client);
         if (!profile.equals(markerProfile) || markerRevision != BookmarkStore.revision()) {
             markers = BookmarkStore.forProfile(profile); markerProfile=profile; markerRevision=BookmarkStore.revision();
         }
-        String band = client.level.dimensionType().hasCeiling() && client.player.getBlockY()<client.level.dimensionType().logicalHeight()
-                ? "cave:"+Math.floorDiv(client.player.getBlockY(),32) : "surface";
+        boolean below=underground(client);
+        String band = below?"connected-cave:"+Math.floorDiv(client.player.getBlockY(),16):"surface";
         // The versioned context preserves old coarse history without treating it as block-level data.
         String nextContext = "blocks-v2\n"+profile+"\n"+WorldNotesClient.dimension(client.level)+"\n"+band;
         if (level != client.level || !nextContext.equals(context)) {
             level=client.level; context=nextContext; cursor=0;
             cache=new TerrainCache(WorldNotesClient.configDirectory().resolve("worldnotes/terrain"), context);
             imageRevision=-1;
+            cave=null;
             scanX=Integer.MIN_VALUE;
         }
         int cx=Math.floorDiv(client.player.getBlockX(),16), cz=Math.floorDiv(client.player.getBlockZ(),16);
         originX=client.player.getBlockX()-span()/2; originZ=client.player.getBlockZ()-span()/2;
+        if(below) {
+            int x=client.player.getBlockX(),y=client.player.getBlockY(),z=client.player.getBlockZ();
+            if(cave==null || caveDirty || cave.width!=radius*32+1 || Math.abs((long)x-cave.centerX)>16 || Math.abs((long)z-cave.centerZ)>16
+                    || !cave.contains(x,y,z)) {
+                cave=new CaveLayer(x,y,z,radius);imageRevision=-1;caveDirty=false;
+            }
+            if(tickCount%20==0)cave.retryUnknown();
+            cave.advance(new CaveLayer.Terrain() {
+                public int space(int x,int y,int z) {
+                    if(y<level.getMinY()||y>=level.getMinY()+level.getHeight())return 0;
+                    if(!MapNavigation.inRange(Math.floorDiv(x,16),Math.floorDiv(z,16),cx,cz,radius))return -1;
+                    LevelChunk chunk=level.getChunkSource().getChunk(Math.floorDiv(x,16),Math.floorDiv(z,16),false);
+                    if(chunk==null)return -1;
+                    POSITION.set(x,y,z);
+                    if(chunk.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,x&15,z&15)<=y)return 0;
+                    return chunk.getBlockState(POSITION).isCollisionShapeFullBlock(level,POSITION)?0:1;
+                }
+                public int color(int x,int y,int z) {
+                    POSITION.set(x,y,z);
+                    LevelChunk chunk=level.getChunkSource().getChunk(Math.floorDiv(x,16),Math.floorDiv(z,16),false);
+                    if(chunk==null)return UNKNOWN;
+                    int rgb=chunk.getBlockState(POSITION).getMapColor(level,POSITION).col;
+                    return rgb==0?0xFF484F59:0xFF000000|rgb;
+                }
+            },4096,System.nanoTime()+6_000_000L);
+        } else {
         if(cx!=scanX || cz!=scanZ || scanZoom!=settings.zoom || cursor>=offsets.size() && tickCount%4==0) {
             scanX=cx;scanZ=cz;scanZoom=settings.zoom;cursor=0;
         }
@@ -103,17 +144,20 @@ final class WorldNotesMinimap {
             if (chunk==null) { cache.request(x,z);continue; }
             int[] colors=new int[TerrainTileFile.SAMPLES];
             for (int row=0; row<16; row++) for (int col=0; col<16; col++)
-                colors[row*16+col]=sampleColor(chunk,x*16+col,z*16+row,client.player.getBlockY());
+                colors[row*16+col]=sampleColor(chunk,x*16+col,z*16+row);
             cache.store(x,z,colors); samples++;
         }
-        if (++tickCount % 100 == 0) cache.trim(cx,cz,radius+2);
+        if (tickCount % 100 == 99) cache.trim(cx,cz,radius+2);
+        }
+        tickCount++;
         int width=span();
         if(tickCount%2==0 || pixels.length!=width*width || imageRevision<0
                 || Math.abs((long)originX-imageOriginX)>width/4 || Math.abs((long)originZ-imageOriginZ)>width/4) {
-            long revision=cache.revision();
+            long revision=cave==null?cache.revision():cave.revision();
             if(pixels.length!=width*width || imageOriginX!=originX || imageOriginZ!=originZ || imageRevision!=revision) {
                 pixels=new int[width*width];
-                cache.copyRegion(originX,originZ,width,pixels);
+                if(cave==null)cache.copyRegion(originX,originZ,width,pixels);
+                else cave.copyRegion(originX,originZ,width,pixels);
                 int known=0;for(int color:pixels)if(color!=UNKNOWN)known++;coverage=known*100/pixels.length;
                 imageOriginX=originX; imageOriginZ=originZ; imageRevision=revision; textureDirty=true;
             }
@@ -146,7 +190,8 @@ final class WorldNotesMinimap {
         renderMap(graphics,client,b[0],b[1],b[2],-1,-1,false);
         String dimension=WorldNotesClient.dimension(client.level);
         CompassColors.draw(graphics,client.font,"N",b[0]+b[2]/2-3,b[1]-13,dimension);
-        CompassColors.draw(graphics,client.font,MapNavigation.facing(client.player.getYRot()),b[0]+2,b[1]+b[2]+3,dimension);
+        graphics.text(client.font,CompassColors.label(MapNavigation.facing(client.player.getYRot()),dimension)
+                .copy().append(cave==null?"":" | Cave "+cave.minY),b[0]+2,b[1]+b[2]+3,0xFFFFFFFF,true);
     }
     private static int coordinate(double value,int origin,int size) { return (int)Math.floor((value-origin)*size/Math.sqrt(pixels.length)); }
     private static void dot(GuiGraphicsExtractor g,int x,int y,int color,int radius) {
@@ -177,6 +222,7 @@ final class WorldNotesMinimap {
         List<MapMarkerLayout.Marker> observations=new ArrayList<>();
         for (Entity entity:level.entitiesForRendering()) {
             if (entity==client.player || entity.isRemoved()) continue;
+            if(cave!=null&&!cave.contains(entity.getBlockX(),entity.getBlockY(),entity.getBlockZ()))continue;
             if(!MapNavigation.inRange(Math.floorDiv(entity.getBlockX(),16),Math.floorDiv(entity.getBlockZ(),16),
                     Math.floorDiv(client.player.getBlockX(),16),Math.floorDiv(client.player.getBlockZ(),16),radius)) continue;
             if(settings.nearbyHeights && !(entity instanceof Player) && Math.abs(entity.getY()-client.player.getY())>24) continue;
@@ -220,6 +266,8 @@ final class WorldNotesMinimap {
         }
         for (Bookmark bookmark:markers) {
             if(bookmark.hidden || !dimension.equals(bookmark.dimension)) continue;
+            if(cave!=null&&!cave.contains((int)Math.floor(bookmark.x),(int)Math.floor(bookmark.y),(int)Math.floor(bookmark.z))
+                    &&!cave.contains((int)Math.floor(bookmark.x),(int)Math.floor(bookmark.y)+1,(int)Math.floor(bookmark.z)))continue;
             int x=coordinate(bookmark.x,imageOriginX,size),z=coordinate(bookmark.z,imageOriginZ,size);
             boolean tracked=WorldNotesClient.isTracked(bookmark);
             if(tracked) { x=Math.clamp(x,3,size-4); z=Math.clamp(z,3,size-4); }
@@ -263,23 +311,8 @@ final class WorldNotesMinimap {
             case NEUTRAL -> {g.fill(x-1,y-2,x+2,y+3,kind.color);g.fill(x-2,y-1,x+3,y+2,kind.color);}
         }
     }
-    private static int sampleColor(LevelChunk chunk, int x, int z, int playerY) {
+    private static int sampleColor(LevelChunk chunk, int x, int z) {
         int height = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x & 15, z & 15);
-        if (level.dimensionType().hasCeiling() && playerY < level.dimensionType().logicalHeight()) {
-            // Look for a cave floor near the player's elevation instead of painting the Nether roof.
-            height = Math.min(height, playerY + 16);
-            boolean foundAir = false;
-            for (int depth = 0; depth < 64 && height >= level.getMinY(); depth++, height--) {
-                POSITION.set(x, height, z);
-                var state = chunk.getBlockState(POSITION);
-                if (state.isAir()) foundAir = true;
-                else if (foundAir || !state.getFluidState().isEmpty()) {
-                    int rgb = state.getMapColor(level, POSITION).col;
-                    if (rgb != 0) return 0xFF000000 | rgb;
-                }
-            }
-            return UNKNOWN;
-        }
         // Skip colorless surface blocks such as glass, without scanning entire columns.
         for (int depth = 0; depth < 16 && height >= level.getMinY(); depth++, height--) {
             POSITION.set(x, height, z);

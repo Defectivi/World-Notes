@@ -4,6 +4,11 @@ All notable changes to the mod are documented here.
 
 ## 1.0.0 stable
 
+- Added automatic connected cave layers in every dimension, with 16-block height bands, isolated-cave masking, matching entity/bookmark filtering, and active-layer labels.
+- Kept persistent surface history out of cave views; resumed scans at missing chunk frontiers and rebuilt connectivity when passages change.
+- Disabled Cheat unless both operator-level permission and locate/teleport command access are granted, with live permission updates.
+- Added sealed/stacked cave, negative-layer, delayed-chunk, passage-change, and combined-permission regression tests.
+
 - Replaced zoom buttons with mouse-wheel zoom over the expanded map, including fractional scrolling and bounded zoom levels.
 - Prioritized visible terrain, increased bounded sampling to up to 32 chunks per tick, separated parallel cache reads from writes, and displayed terrain coverage.
 - Reduced the minimap player arrow and added dimension-aware facing gradients and two-colour cardinal edge letters.

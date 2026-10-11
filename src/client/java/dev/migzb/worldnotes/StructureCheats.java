@@ -13,8 +13,11 @@ public final class StructureCheats {
     static boolean permitted(Minecraft client) {
         if(client.player==null||client.level==null)return false;
         var root=client.player.connection.getCommands().getRoot();
-        return root.getChild("locate")!=null && root.getChild("locate").getChild("structure")!=null
-                && (root.getChild("tp")!=null || root.getChild("teleport")!=null);
+        return allowed(client.player.permissions(),root.getChild("locate")!=null && root.getChild("locate").getChild("structure")!=null,
+                root.getChild("tp")!=null || root.getChild("teleport")!=null);
+    }
+    static boolean allowed(net.minecraft.server.permissions.PermissionSet permissions,boolean locate,boolean teleport) {
+        return permissions.hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER)&&locate&&teleport;
     }
     static boolean busy(Object owner){return pending!=null && pending.owner==owner;}
     static void cancel(Object owner){if(busy(owner))pending=null;}
