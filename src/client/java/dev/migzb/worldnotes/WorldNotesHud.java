@@ -36,7 +36,7 @@ public final class WorldNotesHud {
         int direction = directionIndex(minecraft.player.getYRot());
         String label = MapNavigation.facing(minecraft.player.getYRot());
         int labelWidth = minecraft.font.width(label);
-        graphics.text(minecraft.font, label, center - labelWidth / 2, 8, directionColor(direction), true);
+        CompassColors.draw(graphics,minecraft.font,label,center-labelWidth/2,8,WorldNotesClient.dimension(minecraft.level));
 
         renderTracking(graphics, minecraft);
     }

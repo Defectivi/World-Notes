@@ -1,0 +1,326 @@
+[
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_cherry_grove.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Cherry Grove",
+        "id":  "minecraft:abandoned_camp_cherry_grove"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/village_snowy.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Village Snowy",
+        "id":  "minecraft:village_snowy"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_flower_forest.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Flower Forest",
+        "id":  "minecraft:abandoned_camp_flower_forest"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/mineshaft_mesa.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Mineshaft Mesa",
+        "id":  "minecraft:mineshaft_mesa"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_pale_garden.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Pale Garden",
+        "id":  "minecraft:abandoned_camp_pale_garden"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/jungle_pyramid.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Jungle Pyramid",
+        "id":  "minecraft:jungle_pyramid"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/ocean_ruin_warm.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Ocean Ruin Warm",
+        "id":  "minecraft:ocean_ruin_warm"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/igloo.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Igloo",
+        "id":  "minecraft:igloo"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_snowy_taiga.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Snowy Taiga",
+        "id":  "minecraft:abandoned_camp_snowy_taiga"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_dappled_forest.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Dappled Forest",
+        "id":  "minecraft:abandoned_camp_dappled_forest"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/trial_chambers.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Trial Chambers",
+        "id":  "minecraft:trial_chambers"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_swamp.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Swamp",
+        "id":  "minecraft:abandoned_camp_swamp"
+    },
+    {
+        "resource":  "data/minecraft/tags/worldgen/structure/abandoned_camp.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp (any type)",
+        "id":  "#minecraft:abandoned_camp"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_old_growth_spruce_taiga.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Old Growth Spruce Taiga",
+        "id":  "minecraft:abandoned_camp_old_growth_spruce_taiga"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_old_growth_birch_forest.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Old Growth Birch Forest",
+        "id":  "minecraft:abandoned_camp_old_growth_birch_forest"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/mineshaft.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Mineshaft",
+        "id":  "minecraft:mineshaft"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/ruined_portal_swamp.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Ruined Portal Swamp",
+        "id":  "minecraft:ruined_portal_swamp"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/fortress.json",
+        "dimension":  "minecraft:the_nether",
+        "name":  "Fortress",
+        "id":  "minecraft:fortress"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/ruined_portal_mountain.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Ruined Portal Mountain",
+        "id":  "minecraft:ruined_portal_mountain"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/ruined_portal_ocean.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Ruined Portal Ocean",
+        "id":  "minecraft:ruined_portal_ocean"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/swamp_hut.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Swamp Hut",
+        "id":  "minecraft:swamp_hut"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_meadow.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Meadow",
+        "id":  "minecraft:abandoned_camp_meadow"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/monument.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Monument",
+        "id":  "minecraft:monument"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/ruined_portal_nether.json",
+        "dimension":  "minecraft:the_nether",
+        "name":  "Ruined Portal Nether",
+        "id":  "minecraft:ruined_portal_nether"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/shipwreck_beached.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Shipwreck Beached",
+        "id":  "minecraft:shipwreck_beached"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/bastion_remnant.json",
+        "dimension":  "minecraft:the_nether",
+        "name":  "Bastion Remnant",
+        "id":  "minecraft:bastion_remnant"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/buried_treasure.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Buried Treasure",
+        "id":  "minecraft:buried_treasure"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_sparse_jungle.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Sparse Jungle",
+        "id":  "minecraft:abandoned_camp_sparse_jungle"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/end_city.json",
+        "dimension":  "minecraft:the_end",
+        "name":  "End City",
+        "id":  "minecraft:end_city"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_windswept_forest.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Windswept Forest",
+        "id":  "minecraft:abandoned_camp_windswept_forest"
+    },
+    {
+        "resource":  "data/minecraft/tags/worldgen/structure/village.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Village (any type)",
+        "id":  "#minecraft:village"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/nether_fossil.json",
+        "dimension":  "minecraft:the_nether",
+        "name":  "Nether Fossil",
+        "id":  "minecraft:nether_fossil"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/ruined_portal.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Ruined Portal",
+        "id":  "minecraft:ruined_portal"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/pillager_outpost.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Pillager Outpost",
+        "id":  "minecraft:pillager_outpost"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_forest.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Forest",
+        "id":  "minecraft:abandoned_camp_forest"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/ancient_city.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Ancient City",
+        "id":  "minecraft:ancient_city"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/stronghold.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Stronghold",
+        "id":  "minecraft:stronghold"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/mansion.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Mansion",
+        "id":  "minecraft:mansion"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/ruined_portal_jungle.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Ruined Portal Jungle",
+        "id":  "minecraft:ruined_portal_jungle"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/village_taiga.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Village Taiga",
+        "id":  "minecraft:village_taiga"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_savanna.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Savanna",
+        "id":  "minecraft:abandoned_camp_savanna"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/ocean_ruin_cold.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Ocean Ruin Cold",
+        "id":  "minecraft:ocean_ruin_cold"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_birch_forest.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Birch Forest",
+        "id":  "minecraft:abandoned_camp_birch_forest"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/desert_pyramid.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Desert Pyramid",
+        "id":  "minecraft:desert_pyramid"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/ruined_portal_desert.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Ruined Portal Desert",
+        "id":  "minecraft:ruined_portal_desert"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/village_plains.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Village Plains",
+        "id":  "minecraft:village_plains"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_wooded_badlands.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Wooded Badlands",
+        "id":  "minecraft:abandoned_camp_wooded_badlands"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/village_desert.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Village Desert",
+        "id":  "minecraft:village_desert"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/shipwreck.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Shipwreck",
+        "id":  "minecraft:shipwreck"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_old_growth_pine_taiga.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Old Growth Pine Taiga",
+        "id":  "minecraft:abandoned_camp_old_growth_pine_taiga"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/trail_ruins.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Trail Ruins",
+        "id":  "minecraft:trail_ruins"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_taiga.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Taiga",
+        "id":  "minecraft:abandoned_camp_taiga"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/abandoned_camp_bamboo_jungle.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Abandoned Camp Bamboo Jungle",
+        "id":  "minecraft:abandoned_camp_bamboo_jungle"
+    },
+    {
+        "resource":  "data/minecraft/worldgen/structure/village_savanna.json",
+        "dimension":  "minecraft:overworld",
+        "name":  "Village Savanna",
+        "id":  "minecraft:village_savanna"
+    }
+]

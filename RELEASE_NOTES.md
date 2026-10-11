@@ -16,10 +16,13 @@ Install one jar matching both your Minecraft version and mod loader. Java 25 is 
 
 NeoForge's 26.3 loader is currently beta. Fabric 26.4-snapshot-3 builds are experimental CI artifacts and are excluded from stable release downloads.
 
-- North-up minimap with a block-resolution texture, automatic effective-render-distance coverage for terrain and radar, persistent client-observed terrain history, and an expanded map opened with M. N zooms within that range.
+- North-up minimap with a block-resolution texture, automatic effective-render-distance coverage for terrain and radar, persistent client-observed terrain history, and an expanded map opened with M. Scroll over the map to zoom; N remains an optional shortcut.
+- Faster visible-first terrain sampling with a 6 ms tick budget, up to 32 chunks per tick, independent parallel cache reads, and a coverage indicator. Server chunk delivery remains outside the mod's control; no additional dependency is needed.
+- Smaller minimap player arrow, dimension-aware direction gradients, and two-colour N/E/S/W map edges.
+- Settings > Cheat searches built-in structures for the installed version and current dimension using native server commands. Cheats/OP and command permissions are required. Review the located X/Z and choose a safe arrival Y before requesting teleport; locate does not supply a safe height.
 - Item, neutral/passive mob, hostile mob, and player markers with expanded-map hover identification. Entity information is limited to what the server sends to the client.
 - Smaller category symbols, crowded-entity groups with counts, clickable legend filters, a rotating player arrow with eight-direction facing labels, nearby-height filtering, and responsive controls improve map readability at large GUI scales.
-- Settings above the hidden list control map visibility, position, size, zoom, marker categories, and the client-only rainbow outline on the exact tracked coordinate block.
+- Settings above the hidden list control map visibility, position, size, marker categories, and the client-only rainbow outline on the exact tracked coordinate block.
 - Dimension gradients, a day counter below coordinates, a diary-and-quill icon, and loader names in jar filenames and mod-list entries. Version remains 1.0.0.
 - Searchable bookmarks with notes, hidden entries, colours, and a deepslate/cartography interface.
 - Separate world/server profiles, safe editor cancellation, validated coordinates, transactional saves, and automatic backup recovery.

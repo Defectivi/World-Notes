@@ -12,6 +12,9 @@ final class TerrainCache {
     private static final ExecutorService IO = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "worldnotes-terrain-cache"); thread.setDaemon(true); return thread;
     });
+    private static final ExecutorService READ_IO = Executors.newFixedThreadPool(2,r -> {
+        Thread thread=new Thread(r,"worldnotes-terrain-reader");thread.setDaemon(true);return thread;
+    });
     private final Path directory;
     private final Map<Long, int[]> tiles = new ConcurrentHashMap<>();
     private final Set<Long> checked = ConcurrentHashMap.newKeySet(), pending = ConcurrentHashMap.newKeySet();
@@ -32,7 +35,7 @@ final class TerrainCache {
             try { if (Files.exists(file(x, z)) && tiles.putIfAbsent(key, TerrainTileFile.read(file(x, z))) == null) revision.incrementAndGet(); }
             catch (Exception exception) { LoggerFactory.getLogger("worldnotes").warn("Discarding unreadable terrain tile {}, {}", x, z, exception); }
             finally { checked.add(key); pending.remove(key); }
-        }, IO);
+        }, READ_IO);
     }
     CompletableFuture<Void> store(int x, int z, int[] colors) {
         if (colors.length != TerrainTileFile.SAMPLES) throw new IllegalArgumentException("Expected 256 block colors");

@@ -4,6 +4,12 @@ All notable changes to the mod are documented here.
 
 ## 1.0.0 stable
 
+- Replaced zoom buttons with mouse-wheel zoom over the expanded map, including fractional scrolling and bounded zoom levels.
+- Prioritized visible terrain, increased bounded sampling to up to 32 chunks per tick, separated parallel cache reads from writes, and displayed terrain coverage.
+- Reduced the minimap player arrow and added dimension-aware facing gradients and two-colour cardinal edge letters.
+- Added Settings > Cheat with searchable, version-available, dimension-filtered structure locations and permission-aware teleport requests with an explicit arrival height.
+- Added structure-response validation, catalog availability/dimension, zoom boundary, and terrain scan-order regression coverage.
+
 - Replaced coarse terrain samples with 256 independent block colours per chunk and an efficient nearest-neighbour map texture; introduced a separately versioned block-resolution cache.
 - Matched terrain and entity range to Minecraft's effective render distance, replacing the fixed radius with 1x–16x visual zoom.
 - Added a rotating player arrow and eight-direction facing labels, with snapshot-specific texture API support.

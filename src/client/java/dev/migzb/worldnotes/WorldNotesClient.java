@@ -46,6 +46,7 @@ public final class WorldNotesClient {
         while (toggleMinimap.consumeClick()) if (client.player != null) setScreen(client, new ExpandedMapScreen());
         while (zoomMinimap.consumeClick()) WorldNotesMinimap.zoom(client);
         WorldNotesMinimap.tick(client);
+        StructureCheats.tick(client);
         WorldNotesBlockHighlight.update(client);
     }
     static boolean mapKey(net.minecraft.client.input.KeyEvent event) { return toggleMinimap.matches(event); }

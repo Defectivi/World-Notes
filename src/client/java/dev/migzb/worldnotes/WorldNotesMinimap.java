@@ -31,17 +31,13 @@ final class WorldNotesMinimap {
     private static TerrainCache cache;
     private static String context;
     private static int originX, originZ, cursor, tickCount;
+    private static int scanX=Integer.MIN_VALUE,scanZ,scanZoom;
+    private static int coverage;
     private static int[] pixels = new int[0];
     private static List<Bookmark> markers = List.of();
     private static String markerProfile;
     private static long markerRevision = -1;
     private static List<int[]> offsets = List.of();
-    private static List<int[]> offsets(int radius) {
-        List<int[]> result = new ArrayList<>();
-        for (int z=-radius; z<=radius; z++) for (int x=-radius; x<=radius; x++) result.add(new int[]{x,z});
-        result.sort(Comparator.comparingInt(a -> a[0]*a[0]+a[1]*a[1]));
-        return List.copyOf(result);
-    }
     static void initialize() { settings = MinimapSettings.load(); }
     static MinimapSettings settings() { return settings; }
     static boolean apply(MinimapSettings draft) {
@@ -54,14 +50,19 @@ final class WorldNotesMinimap {
                 && client.getWindow().getGuiScaledHeight() >= 180;
     }
     static void zoom(Minecraft client) {
+        zoom(client,settings.zoom==16?-4:1);
+    }
+    static void zoom(Minecraft client,int steps) {
         MinimapSettings draft = settings.copy();
-        draft.zoom = draft.zoom == 16 ? 1 : draft.zoom * 2;
+        draft.zoom = MapNavigation.zoom(draft.zoom,steps);
+        if(draft.zoom==settings.zoom)return;
         if (!apply(draft)) { WorldNotesGui.overlay(client, Component.translatable("worldnotes.save_failed")); return; }
         cursor = 0;
         if (client.player != null) WorldNotesGui.overlay(client, Component.literal("Map zoom: " + settings.zoom + "x (render distance: " + radius + " chunks)"));
     }
     static int span() { return Math.max(16, radius * 32 / settings.zoom); }
     static int radius() { return radius; }
+    static int coverage() { return coverage; }
     static void tick(Minecraft client) {
         if (client.level == null || client.player == null) {
             level=null; cache=null; context=null; pixels=new int[0]; imageRevision=-1;
@@ -70,7 +71,9 @@ final class WorldNotesMinimap {
         }
         if (!settings.enabled && !(WorldNotesGui.screen(client) instanceof ExpandedMapScreen)) return;
         int renderRadius=Math.clamp(client.options.getEffectiveRenderDistance(),1,64);
-        if(radius!=renderRadius || offsets.isEmpty()) { radius=renderRadius; offsets=offsets(radius); cursor=0; }
+        if(radius!=renderRadius || offsets.isEmpty() || scanZoom!=settings.zoom) {
+            radius=renderRadius; offsets=MapNavigation.terrainOffsets(radius,settings.zoom); cursor=0; scanX=Integer.MIN_VALUE;
+        }
         String profile = WorldNotesClient.profile(client);
         if (!profile.equals(markerProfile) || markerRevision != BookmarkStore.revision()) {
             markers = BookmarkStore.forProfile(profile); markerProfile=profile; markerRevision=BookmarkStore.revision();
@@ -83,31 +86,35 @@ final class WorldNotesMinimap {
             level=client.level; context=nextContext; cursor=0;
             cache=new TerrainCache(WorldNotesClient.configDirectory().resolve("worldnotes/terrain"), context);
             imageRevision=-1;
+            scanX=Integer.MIN_VALUE;
         }
         int cx=Math.floorDiv(client.player.getBlockX(),16), cz=Math.floorDiv(client.player.getBlockZ(),16);
         originX=client.player.getBlockX()-span()/2; originZ=client.player.getBlockZ()-span()/2;
+        if(cx!=scanX || cz!=scanZ || scanZoom!=settings.zoom || cursor>=offsets.size() && tickCount%4==0) {
+            scanX=cx;scanZ=cz;scanZoom=settings.zoom;cursor=0;
+        }
         int samples=0;
-        for (int work=0; work<64; work++) {
-            int[] offset=offsets.get(cursor++ % offsets.size());
+        long deadline=System.nanoTime()+6_000_000L;
+        for (int work=0; work<512 && cursor<offsets.size() && samples<32 && System.nanoTime()<deadline; work++) {
+            int[] offset=offsets.get(cursor++);
             int x=cx+offset[0], z=cz+offset[1];
-            cache.request(x,z);
-            if (samples>=2 || cache.has(x,z) || !cache.ready(x,z)) continue;
+            if(cache.has(x,z))continue;
             LevelChunk chunk=level.getChunkSource().getChunk(x,z,false);
-            if (chunk==null) continue;
+            if (chunk==null) { cache.request(x,z);continue; }
             int[] colors=new int[TerrainTileFile.SAMPLES];
             for (int row=0; row<16; row++) for (int col=0; col<16; col++)
                 colors[row*16+col]=sampleColor(chunk,x*16+col,z*16+row,client.player.getBlockY());
             cache.store(x,z,colors); samples++;
         }
-        cursor %= offsets.size();
         if (++tickCount % 100 == 0) cache.trim(cx,cz,radius+2);
         int width=span();
-        if(tickCount%4==0 || pixels.length!=width*width || imageRevision<0
+        if(tickCount%2==0 || pixels.length!=width*width || imageRevision<0
                 || Math.abs((long)originX-imageOriginX)>width/4 || Math.abs((long)originZ-imageOriginZ)>width/4) {
             long revision=cache.revision();
             if(pixels.length!=width*width || imageOriginX!=originX || imageOriginZ!=originZ || imageRevision!=revision) {
                 pixels=new int[width*width];
                 cache.copyRegion(originX,originZ,width,pixels);
+                int known=0;for(int color:pixels)if(color!=UNKNOWN)known++;coverage=known*100/pixels.length;
                 imageOriginX=originX; imageOriginZ=originZ; imageRevision=revision; textureDirty=true;
             }
         }
@@ -137,8 +144,9 @@ final class WorldNotesMinimap {
         int[] b=bounds(client);
         WorldNotesTheme.panel(graphics,b[0]-3,b[1]-3,b[2]+6,b[2]+17,WorldNotesTheme.dimensionAccent(WorldNotesClient.dimension(client.level)));
         renderMap(graphics,client,b[0],b[1],b[2],-1,-1,false);
-        graphics.text(client.font,"N",b[0]+b[2]/2-3,b[1]-13,0xFFFFFFFF,true);
-        graphics.text(client.font,MapNavigation.facing(client.player.getYRot()),b[0]+2,b[1]+b[2]+3,0xFFD4DEE9,true);
+        String dimension=WorldNotesClient.dimension(client.level);
+        CompassColors.draw(graphics,client.font,"N",b[0]+b[2]/2-3,b[1]-13,dimension);
+        CompassColors.draw(graphics,client.font,MapNavigation.facing(client.player.getYRot()),b[0]+2,b[1]+b[2]+3,dimension);
     }
     private static int coordinate(double value,int origin,int size) { return (int)Math.floor((value-origin)*size/Math.sqrt(pixels.length)); }
     private static void dot(GuiGraphicsExtractor g,int x,int y,int color,int radius) {
@@ -220,23 +228,30 @@ final class WorldNotesMinimap {
             if(expanded && Math.abs(mouseX-left-x)<=5 && Math.abs(mouseY-top-z)<=5) hovered=List.of(bookmark.displayName(),Component.literal(BookmarkScreen.coordinates(bookmark)));
         }
         int px=coordinate(client.player.getX(),imageOriginX,size),pz=coordinate(client.player.getZ(),imageOriginZ,size);
-        arrow(g,left+px,top+pz,client.player.getYRot());
+        arrow(g,left+px,top+pz,client.player.getYRot(),expanded);
         if(expanded) {
+            String[] directions={"N","E","S","W"};
+            int[] dx={size/2-3,size-9,size/2-3,3},dy={3,size/2-4,size-12,size/2-4};
+            for(int i=0;i<4;i++) {
+                g.fill(left+dx[i]-1,top+dy[i]-1,left+dx[i]+7,top+dy[i]+9,0xD010151D);
+                CompassColors.draw(g,client.font,directions[i],left+dx[i],top+dy[i],dimension);
+            }
             g.fill(left+px-10,top+pz-25,left+px+10,top+pz-14,0xD010151D);
             g.text(client.font,"You",left+px-8,top+pz-24,0xFFFFFFFF,true);
             if(Math.abs(mouseX-left-px)<=5 && Math.abs(mouseY-top-pz)<=5)
                 hovered=List.of(Component.literal("You: "+client.player.getBlockX()+", "+client.player.getBlockY()+", "+client.player.getBlockZ()),
-                        Component.literal("Facing "+MapNavigation.facing(client.player.getYRot())));
+                        Component.literal("Facing ").append(CompassColors.label(MapNavigation.facing(client.player.getYRot()),dimension)));
         }
         return hovered;
     }
-    private static void arrow(GuiGraphicsExtractor g,int centerX,int centerZ,float yaw) {
-        for(int z=-9;z<=9;z++) for(int x=-9;x<=9;x++) {
-            if(MapNavigation.arrowPixel(x,z,yaw) || MapNavigation.arrowPixel(x-1,z,yaw) || MapNavigation.arrowPixel(x+1,z,yaw)
-                    || MapNavigation.arrowPixel(x,z-1,yaw) || MapNavigation.arrowPixel(x,z+1,yaw))
+    private static void arrow(GuiGraphicsExtractor g,int centerX,int centerZ,float yaw,boolean expanded) {
+        int scale=expanded?1:2,extent=expanded?9:5;
+        for(int z=-extent;z<=extent;z++) for(int x=-extent;x<=extent;x++) {
+            if(MapNavigation.arrowPixel(x*scale,z*scale,yaw) || MapNavigation.arrowPixel((x-1)*scale,z*scale,yaw) || MapNavigation.arrowPixel((x+1)*scale,z*scale,yaw)
+                    || MapNavigation.arrowPixel(x*scale,(z-1)*scale,yaw) || MapNavigation.arrowPixel(x*scale,(z+1)*scale,yaw))
                 g.fill(centerX+x,centerZ+z,centerX+x+1,centerZ+z+1,0xFF10151D);
         }
-        for(int z=-8;z<=8;z++) for(int x=-8;x<=8;x++) if(MapNavigation.arrowPixel(x,z,yaw))
+        for(int z=-extent;z<=extent;z++) for(int x=-extent;x<=extent;x++) if(MapNavigation.arrowPixel(x*scale,z*scale,yaw))
             g.fill(centerX+x,centerZ+z,centerX+x+1,centerZ+z+1,0xFFFFFFFF);
     }
     private static void symbol(GuiGraphicsExtractor g,int x,int y,MapMarkerLayout.Kind kind) {

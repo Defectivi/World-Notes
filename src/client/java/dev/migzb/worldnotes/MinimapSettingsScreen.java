@@ -22,7 +22,9 @@ final class MinimapSettingsScreen extends Screen {
         option(3,()->"Players: "+state(draft.players),()->draft.players=!draft.players);
         option(4,()->"Neutral/passive: "+state(draft.neutralMobs),()->draft.neutralMobs=!draft.neutralMobs);
         option(5,()->"Hostile mobs: "+state(draft.hostileMobs),()->draft.hostileMobs=!draft.hostileMobs);
-        option(6,()->"Zoom: "+draft.zoom+"x",()->draft.zoom=draft.zoom==16?1:draft.zoom*2);
+        int cheatWidth=Math.min(170,(width-28)/2);
+        addRenderableWidget(Button.builder(Component.literal("Cheat"),b->WorldNotesClient.setScreen(minecraft,new StructureCheatScreen(this)))
+                .bounds(width/2-cheatWidth-3,32+3*Math.min(23,(height-74)/6),cheatWidth,Math.min(20,(height-74)/6-2)).build());
         option(7,()->"Size: "+draft.size,()->draft.size=draft.size==160?96:draft.size+32);
         option(8,()->"Position: "+draft.position.name().replace('_',' '),()->draft.position=MinimapSettings.Position.values()[(draft.position.ordinal()+1)%5]);
         option(9,()->"Custom X: "+draft.customX+"%",()->draft.customX=(draft.customX+10)%110);

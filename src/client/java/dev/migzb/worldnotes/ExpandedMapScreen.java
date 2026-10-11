@@ -11,7 +11,7 @@ import java.util.List;
 final class ExpandedMapScreen extends Screen {
     private MapViewLayout layout;
     private boolean saveFailed;
-    private Button zoomButton;
+    private double wheelRemainder;
     ExpandedMapScreen() { super(Component.literal("World Notes map")); }
 
     private boolean enabled(MapMarkerLayout.Kind kind) {
@@ -46,9 +46,6 @@ final class ExpandedMapScreen extends Screen {
         int buttonWidth = Math.min(100, (width - 28) / 3);
         addRenderableWidget(Button.builder(Component.literal("Settings"), b -> WorldNotesClient.setScreen(minecraft, new MinimapSettingsScreen(this)))
                 .bounds(8, height - 27, buttonWidth, 20).build());
-        zoomButton=addRenderableWidget(Button.builder(Component.literal("Zoom " + WorldNotesMinimap.settings().zoom + "x"), b -> WorldNotesMinimap.zoom(minecraft))
-                .bounds((width - buttonWidth) / 2, height - 27, buttonWidth, 20)
-                .tooltip(Tooltip.create(Component.literal("N: zoom in. Range follows render distance."))).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
                 .bounds(width - buttonWidth - 8, height - 27, buttonWidth, 20).build());
     }
@@ -60,20 +57,30 @@ final class ExpandedMapScreen extends Screen {
     @Override public void extractBackground(GuiGraphicsExtractor g, int x, int y, float partial) {
         WorldNotesTheme.background(g, width, height);
     }
+    @Override public boolean mouseScrolled(double x,double y,double horizontal,double vertical) {
+        if(x>=layout.left() && x<layout.left()+layout.size() && y>=layout.top() && y<layout.top()+layout.size()) {
+            wheelRemainder+=vertical;
+            int steps=(int)wheelRemainder;
+            if(steps!=0){WorldNotesMinimap.zoom(minecraft,Math.clamp(steps,-4,4));wheelRemainder-=steps;}
+            return true;
+        }
+        return super.mouseScrolled(x,y,horizontal,vertical);
+    }
     @Override public void extractRenderState(GuiGraphicsExtractor g, int x, int y, float partial) {
         super.extractRenderState(g, x, y, partial);
         if (minecraft.level == null || minecraft.player == null) { onClose(); return; }
         int left = layout.left(), top = layout.top(), size = layout.size();
         int center = left + size / 2;
         g.centeredText(font, BookmarkScreen.dimensionComponent(WorldNotesClient.dimension(minecraft.level)), center, 6, 0xFFFFFFFF);
-        zoomButton.setMessage(Component.literal("Zoom " + WorldNotesMinimap.settings().zoom + "x"));
-        g.centeredText(font, Component.literal("Facing " + MapNavigation.facing(minecraft.player.getYRot()) + " | " + WorldNotesMinimap.radius() + "ch"), center, 18, WorldNotesTheme.MUTED);
+        g.centeredText(font, Component.literal("Facing ").append(CompassColors.label(MapNavigation.facing(minecraft.player.getYRot()),WorldNotesClient.dimension(minecraft.level)))
+                .append(" | " + WorldNotesMinimap.radius() + "ch"), center, 18, WorldNotesTheme.MUTED);
+        g.centeredText(font,Component.literal(WorldNotesMinimap.settings().zoom+"x"),width/2,height-21,WorldNotesTheme.MUTED);
         g.fill(left - 2, top - 2, left + size + 2, top + size + 2, 0xFF778A9B);
         List<Component> hovered = WorldNotesMinimap.renderMap(g, minecraft, left, top, size, x, y, true);
-        String hint = hovered.isEmpty() ? "Hover markers for details" : hovered.getFirst().getString();
+        String hint = hovered.isEmpty() ? "Scroll to zoom | Terrain " + WorldNotesMinimap.coverage() + "%" : hovered.getFirst().getString();
         if (layout.sidebar()) {
             int textX = layout.legendX(), textY = layout.legendY() + 94;
-            List<Component> help = List.of(Component.literal("White arrow: You"), Component.literal("Range: " + WorldNotesMinimap.radius() + " chunks"),
+            List<Component> help = List.of(Component.literal("Scroll to zoom"), Component.literal("Terrain: " + WorldNotesMinimap.coverage() + "%"),
                     Component.literal("Numbers: entity groups"), Component.literal(WorldNotesMinimap.settings().nearbyHeights ? "Nearby Y: +/-24 blocks" : "All heights shown"));
             for (Component line : help) {
                 for (var wrapped : font.split(line, layout.legendWidth())) {
