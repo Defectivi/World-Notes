@@ -29,9 +29,12 @@ final class MinimapSettingsScreen extends Screen {
         cheat.active=StructureCheats.permitted(minecraft);
         cheat.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal("Requires operator/cheats level 2 and /locate + /tp permission.")));
         option(7,()->"Size: "+draft.size,()->draft.size=draft.size==160?96:draft.size+32);
-        option(8,()->"Position: "+draft.position.name().replace('_',' '),()->draft.position=MinimapSettings.Position.values()[(draft.position.ordinal()+1)%5]);
-        option(9,()->"Custom X: "+draft.customX+"%",()->draft.customX=(draft.customX+10)%110);
-        option(10,()->"Custom Y: "+draft.customY+"%",()->draft.customY=(draft.customY+10)%110);
+        option(8,()->"Position: "+draft.position.name().replace('_',' '),()->{
+            var next=MinimapSettings.Position.values()[(draft.position.ordinal()+1)%5];
+            if(next==MinimapSettings.Position.CUSTOM)WorldNotesClient.setScreen(minecraft,new MinimapPositionScreen(this,draft));else draft.position=next;
+        });
+        option(9,()->"Move map...",()->WorldNotesClient.setScreen(minecraft,new MinimapPositionScreen(this,draft)));
+        option(10,()->"Reset position",()->{draft.position=MinimapSettings.Position.TOP_RIGHT;draft.customAnchorX=-1;draft.customAnchorY=-1;draft.customX=100;draft.customY=0;clearWidgets();init();});
         option(11,()->"Nearby heights: "+state(draft.nearbyHeights),()->draft.nearbyHeights=!draft.nearbyHeights);
         addRenderableWidget(Button.builder(Component.translatable("gui.done"),b->{if(WorldNotesMinimap.apply(draft))onClose();else failed=true;}).bounds(width/2-84,height-27,80,20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.cancel"),b->onClose()).bounds(width/2+4,height-27,80,20).build());

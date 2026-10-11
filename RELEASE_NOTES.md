@@ -24,6 +24,7 @@ NeoForge's 26.3 loader is currently beta. Fabric 26.4-snapshot-3 builds are expe
 - Item, neutral/passive mob, hostile mob, and player markers with expanded-map hover identification. Entity information is limited to what the server sends to the client.
 - Smaller category symbols, crowded-entity groups with counts, clickable legend filters, a rotating player arrow with eight-direction facing labels, nearby-height filtering, and responsive controls improve map readability at large GUI scales.
 - Settings above the hidden list control map visibility, position, size, marker categories, and the client-only rainbow outline on the exact tracked coordinate block.
+- Custom placement opens a live drag editor. Move the map with the left mouse button and choose Save & play to save and return to the game; Cancel/Escape discards the drag. Precise anchors adapt to window/GUI-scale changes, old percentage positions stay compatible, and Reset position restores the top-right preset.
 - Dimension gradients, a day counter below coordinates, a diary-and-quill icon, and loader names in jar filenames and mod-list entries. Version remains 1.0.0.
 - Searchable bookmarks with notes, hidden entries, colours, and a deepslate/cartography interface.
 - Separate world/server profiles, safe editor cancellation, validated coordinates, transactional saves, and automatic backup recovery.

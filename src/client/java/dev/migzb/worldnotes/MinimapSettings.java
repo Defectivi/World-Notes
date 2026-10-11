@@ -15,12 +15,15 @@ final class MinimapSettings {
     boolean items = true, neutralMobs = true, hostileMobs = true, players = true, rainbowHighlight = true;
     boolean nearbyHeights = true;
     int zoom = 1, size = 96, customX = 100, customY = 0;
+    double customAnchorX=-1,customAnchorY=-1;
     Position position = Position.TOP_RIGHT;
     void normalize() {
         if (zoom != 1 && zoom != 2 && zoom != 4 && zoom != 8 && zoom != 16) zoom = 1;
         if (size != 96 && size != 128 && size != 160) size = 96;
         if (position == null) position = Position.TOP_RIGHT;
         customX = Math.clamp(customX, 0, 100); customY = Math.clamp(customY, 0, 100);
+        customAnchorX=Double.isFinite(customAnchorX)&&customAnchorX>=0?Math.clamp(customAnchorX,0,1):-1;
+        customAnchorY=Double.isFinite(customAnchorY)&&customAnchorY>=0?Math.clamp(customAnchorY,0,1):-1;
     }
     MinimapSettings copy() { return GSON.fromJson(GSON.toJson(this), MinimapSettings.class); }
 

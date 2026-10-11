@@ -48,6 +48,7 @@ final class WorldNotesMinimap {
     }
     static boolean visible(Minecraft client) {
         return settings != null && settings.enabled && client.player != null && client.level != null
+                && !(WorldNotesGui.screen(client) instanceof MinimapPositionScreen)
                 && !WorldNotesGui.hidden(client) && client.getWindow().getGuiScaledWidth() >= 240
                 && client.getWindow().getGuiScaledHeight() >= 180;
     }
@@ -83,7 +84,8 @@ final class WorldNotesMinimap {
             if(terrainTexture!=null) { terrainTexture.close(); terrainTexture=null; textureSize=0; }
             return;
         }
-        if (!settings.enabled && !(WorldNotesGui.screen(client) instanceof ExpandedMapScreen)) return;
+        if (!settings.enabled && !(WorldNotesGui.screen(client) instanceof ExpandedMapScreen)
+                && !(WorldNotesGui.screen(client) instanceof MinimapPositionScreen)) return;
         int renderRadius=Math.clamp(client.options.getEffectiveRenderDistance(),1,64);
         if(radius!=renderRadius || offsets.isEmpty() || scanZoom!=settings.zoom) {
             radius=renderRadius; offsets=MapNavigation.terrainOffsets(radius,settings.zoom); cursor=0; scanX=Integer.MIN_VALUE;scanZoom=settings.zoom;
@@ -164,18 +166,8 @@ final class WorldNotesMinimap {
         }
     }
     static int[] bounds(Minecraft client) {
-        int width=client.getWindow().getGuiScaledWidth(), height=client.getWindow().getGuiScaledHeight();
-        int size=Math.min(settings.size,Math.min(width-24,height-80));
-        int maxX=width-size-9, maxY=height-size-25;
-        int x=9,y=56;
-        switch (settings.position) {
-            case TOP_RIGHT -> { x=maxX; y=width<360?56:18; }
-            case TOP_LEFT -> { x=9; y=56; }
-            case BOTTOM_RIGHT -> { x=maxX; y=maxY; }
-            case BOTTOM_LEFT -> { x=9; y=maxY; }
-            case CUSTOM -> { x=9+(maxX-9)*settings.customX/100; y=56+(maxY-56)*settings.customY/100; }
-        }
-        return new int[]{x,y,size};
+        var bounds=MinimapPlacement.bounds(settings,client.getWindow().getGuiScaledWidth(),client.getWindow().getGuiScaledHeight());
+        return new int[]{bounds.x(),bounds.y(),bounds.size()};
     }
     static int trackingTop(Minecraft client) {
         if (!visible(client)) return 30;
@@ -186,6 +178,11 @@ final class WorldNotesMinimap {
     static void render(GuiGraphicsExtractor graphics, Minecraft client) {
         if (!visible(client)) return;
         int[] b=bounds(client);
+        renderPreview(graphics,client,b[0],b[1],b[2]);
+    }
+    static void renderPreview(GuiGraphicsExtractor graphics,Minecraft client,int x,int y,int size) {
+        if(client.player==null||client.level==null)return;
+        int[] b={x,y,size};
         WorldNotesTheme.panel(graphics,b[0]-3,b[1]-3,b[2]+6,b[2]+17,WorldNotesTheme.dimensionAccent(WorldNotesClient.dimension(client.level)));
         renderMap(graphics,client,b[0],b[1],b[2],-1,-1,false);
         String dimension=WorldNotesClient.dimension(client.level);

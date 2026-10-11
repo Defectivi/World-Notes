@@ -4,6 +4,10 @@ All notable changes to the mod are documented here.
 
 ## 1.0.0 stable
 
+- Replaced custom-position percentage buttons with a live drag editor, precise saved anchors, Save & play, cancellation, and a reset-position action.
+- Shared placement geometry between the HUD and preview, preserved legacy positions, and kept maps inside window bounds after resizing.
+- Added placement precision, persistence, resize, edge-clamping, legacy migration, and draft-isolation regression coverage.
+
 - Added automatic connected cave layers in every dimension, with 16-block height bands, isolated-cave masking, matching entity/bookmark filtering, and active-layer labels.
 - Kept persistent surface history out of cave views; resumed scans at missing chunk frontiers and rebuilt connectivity when passages change.
 - Disabled Cheat unless both operator-level permission and locate/teleport command access are granted, with live permission updates.
