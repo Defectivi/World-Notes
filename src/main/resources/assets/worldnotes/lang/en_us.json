@@ -1,7 +1,7 @@
 {
   "key.category.worldnotes.general": "World Notes & Coordinates",
   "key.worldnotes.open_manager": "Open bookmark manager",
-  "key.worldnotes.toggle_minimap": "Toggle minimap",
+  "key.worldnotes.toggle_minimap": "Open expanded map",
   "key.worldnotes.zoom_minimap": "Cycle minimap zoom",
   "worldnotes.minimap.enabled": "Minimap enabled",
   "worldnotes.minimap.disabled": "Minimap disabled",

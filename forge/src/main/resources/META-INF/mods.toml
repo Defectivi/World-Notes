@@ -6,7 +6,7 @@ clientSideOnly=true
 [[mods]]
 modId="worldnotes"
 version="${version}"
-displayName="World Notes & Coordinates"
+displayName="World Notes & Coordinates (Forge)"
 logoFile="assets/worldnotes/icon.png"
 authors="Yuhzhua"
 displayTest="IGNORE_ALL_VERSION"

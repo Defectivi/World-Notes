@@ -43,10 +43,13 @@ public final class WorldNotesClient {
     public static void tick(Minecraft client) {
         if (configDirectory == null) return;
         while (openManager.consumeClick()) setScreen(client, new BookmarkScreen());
-        while (toggleMinimap.consumeClick()) WorldNotesMinimap.toggle(client);
+        while (toggleMinimap.consumeClick()) if (client.player != null) setScreen(client, new ExpandedMapScreen());
         while (zoomMinimap.consumeClick()) WorldNotesMinimap.zoom(client);
         WorldNotesMinimap.tick(client);
+        WorldNotesBlockHighlight.update(client);
     }
+    static boolean mapKey(net.minecraft.client.input.KeyEvent event) { return toggleMinimap.matches(event); }
+    static boolean zoomKey(net.minecraft.client.input.KeyEvent event) { return zoomMinimap.matches(event); }
 
     public static void setScreen(Minecraft client, Screen screen) {
         try {

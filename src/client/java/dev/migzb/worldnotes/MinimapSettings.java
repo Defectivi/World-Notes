@@ -9,17 +9,27 @@ import java.nio.file.Path;
 
 final class MinimapSettings {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path FILE = WorldNotesClient.configDirectory().resolve("worldnotes/minimap.json");
+    enum Position { TOP_RIGHT, TOP_LEFT, BOTTOM_RIGHT, BOTTOM_LEFT, CUSTOM }
+    private static Path file() { return WorldNotesClient.configDirectory().resolve("worldnotes/minimap.json"); }
     boolean enabled = true;
-    int blocksPerPixel = 2;
+    boolean items = true, neutralMobs = true, hostileMobs = true, players = true, rainbowHighlight = true;
+    int radiusChunks = 32, size = 96, customX = 100, customY = 0;
+    Position position = Position.TOP_RIGHT;
+    void normalize() {
+        if (radiusChunks != 8 && radiusChunks != 16 && radiusChunks != 32) radiusChunks = 32;
+        if (size != 96 && size != 128 && size != 160) size = 96;
+        if (position == null) position = Position.TOP_RIGHT;
+        customX = Math.clamp(customX, 0, 100); customY = Math.clamp(customY, 0, 100);
+    }
+    MinimapSettings copy() { return GSON.fromJson(GSON.toJson(this), MinimapSettings.class); }
 
     static MinimapSettings load() {
+        Path FILE = file();
         if (Files.exists(FILE)) {
             try {
                 MinimapSettings settings = GSON.fromJson(Files.readString(FILE), MinimapSettings.class);
                 if (settings != null) {
-                    if (settings.blocksPerPixel != 1 && settings.blocksPerPixel != 2 && settings.blocksPerPixel != 4)
-                        settings.blocksPerPixel = 2;
+                    settings.normalize();
                     return settings;
                 }
             } catch (Exception exception) {
@@ -29,11 +39,14 @@ final class MinimapSettings {
         return new MinimapSettings();
     }
 
-    void save() {
+    boolean save() {
         try {
-            AtomicFiles.write(FILE, GSON.toJson(this));
+            normalize();
+            AtomicFiles.write(file(), GSON.toJson(this));
+            return true;
         } catch (Exception exception) {
             LoggerFactory.getLogger("worldnotes").warn("Unable to save minimap settings", exception);
+            return false;
         }
     }
 }

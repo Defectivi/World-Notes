@@ -1,9 +1,11 @@
 license="MIT"
+[[mixins]]
+config="worldnotes.mixins.json"
 
 [[mods]]
 modId="worldnotes"
 version="${version}"
-displayName="World Notes & Coordinates"
+displayName="World Notes & Coordinates (NeoForge)"
 logoFile="assets/worldnotes/icon.png"
 authors="Yuhzhua"
 description='''Client-side terrain minimap and dimension-aware local coordinate bookmarks.'''

@@ -19,7 +19,7 @@ jobs:
       - run: bash ./gradlew build -Pchannel=${{ matrix.channel }} --console=plain
       - uses: actions/upload-artifact@v4
         with:
-          name: worldnotes-${{ matrix.channel }}
+          name: worldnotes-fabric-${{ matrix.channel }}
           path: build/libs/*.jar
   forge:
     runs-on: ubuntu-latest

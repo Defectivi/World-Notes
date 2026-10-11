@@ -4,6 +4,13 @@ All notable changes to the mod are documented here.
 
 ## 1.0.0 stable
 
+- Expanded the minimap to a default 32-chunk radius, with persistent terrain history separated by world, dimension, and cave elevation.
+- Added M to open/close an expanded map, hover identification, and markers for items, neutral/passive mobs, hostile mobs, and other players received by the client.
+- Added settings above the hidden list for minimap visibility, marker categories, size, radius, corner/custom placement, and client-only rainbow tracking outlines.
+- Added dimension text gradients, moved the day counter below coordinates, and replaced the icon with a diary and feather quill.
+- Distinguished all loader jars and mod-list entries while retaining version 1.0.0.
+- Added terrain corruption, negative-coordinate, context separation, restart restoration, and settings regression coverage.
+
 - Added Minecraft 26.1.2 targets for Fabric, Forge, and NeoForge.
 - Added native client-only NeoForge entrypoints, key mappings, HUD layers, and client tick integration for 26.1.2 and 26.3.
 - Added compile-checked version-specific HUD adapters for Minecraft 26.1.2 and newer versions.

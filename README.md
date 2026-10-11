@@ -31,14 +31,18 @@ The `lts` channel is a pinned 26.1.2 compatibility target; it does not promise u
 
 ## Minimap
 
-- North-up terrain map in the top-right corner, with your position and facing direction.
-- **M** toggles the map; **N** cycles 48, 96, and 192 blocks of coverage. Both keys are configurable in Controls.
-- Cyan markers show visible bookmarks in the current world/server and dimension; the tracked bookmark is gold. Hidden bookmarks stay hidden.
-- Samples only chunks already loaded on the client. Unknown terrain appears dark. No server installation or permissions are needed.
-- Terrain refreshes incrementally, with a fixed sampling budget per client tick. This is a local surface map, with no entity radar or persistent terrain history.
-- In ceiling dimensions such as the Nether, samples look for cave floors near your elevation; columns with no nearby floor appear dark. Above the roof, the map uses the surface again.
-- Visibility and zoom are saved in `config/worldnotes/minimap.json`. The map respects F1 and hides when the scaled window is too small.
-- Tracking guidance appears beneath the map.
+- North-up map with your position and facing direction. The default **32-chunk radius** covers 1,024 blocks across (64 chunks).
+- **M** opens/closes the expanded map; **N** cycles 8, 16, and 32-chunk radii. Both keys are configurable in Controls. Hover a marker in the expanded map to identify it.
+- Purple markers show visible bookmarks; the tracked bookmark is gold. Hidden bookmarks stay hidden.
+- Yellow identifies dropped items, green identifies neutral/passive mobs, red identifies hostile mobs, and cyan identifies other players. Only entities currently known to your client are shown; terrain history does not store entities.
+- Samples only chunks already received by the client. Unknown terrain appears dark, even if the server generated it elsewhere. The map never asks the server to load distant chunks.
+- Explored terrain is saved asynchronously in `config/worldnotes/terrain/`, separated by world/server, dimension, and Nether elevation band. Cached terrain remains visible after chunks unload and after restarting. Samples use four-block spacing and a fixed budget per tick. Historical terrain is a snapshot; remove its cache to resurvey changed terrain.
+- Nether samples look for cave floors near your elevation. Above the roof, the map uses the surface again.
+- The settings button above the hidden-bookmarks button controls minimap visibility, entity categories, rainbow highlighting, size, radius, corner placement, and custom horizontal/vertical percentages. Done saves; Cancel discards changes. Settings persist in `config/worldnotes/minimap.json`.
+- The HUD respects F1 and hides the minimap when the scaled window is too small. The expanded map remains available with M when the minimap is disabled.
+- Dimension labels use green Overworld, fiery Nether, and purple End gradients. The day counter sits directly below the coordinates.
+- Tracking a visible bookmark highlights the exact block containing its coordinates with an animated rainbow outline and soft halo, within 1,024 blocks and in the same dimension. This is client-only rendering and never changes block state or sends glow updates to the server. Negative and fractional coordinates use Minecraft block-floor rules.
+- A diary and feather-quill icon identifies the mod. Jar filenames and mod-list names distinguish Fabric, Forge, and NeoForge while retaining version 1.0.0.
 
 ## Build
 
@@ -67,7 +71,7 @@ Pushing a `v<mod_version>` tag publishes a GitHub stable release after all CI bu
 - Compact previews and responsive pagination keep long notes inside the list; open a bookmark to read/edit the full values.
 - Deepslate textures, faint cartography grids, dimension accents, and tracked-location highlights provide a consistent background for the manager, editor, and minimap.
 - Editing uses a separate draft. Cancel or Escape discards it; changing colour or dimension never saves implicitly. New bookmarks must be saved before tracking.
-- Invalid or non-finite coordinates show an error instead of silently falling back. Horizontal coordinates must be within ±30 million and Y within ±20 million.
+- Invalid or non-finite coordinates show an error instead of silently falling back. Horizontal coordinates must be within Â±30 million and Y within Â±20 million.
 - Saves use temporary files and atomic replacement where supported, retaining the previous document in `config/worldnotes/bookmarks.json.bak`. A damaged primary loads the backup; if neither file can be read, saving is blocked to preserve the damaged data. Check the game log and restore a valid JSON file before restarting.
 - Teleport messages report a request; the server decides whether it succeeds. Cross-dimension teleport buttons also check availability of `execute in`.
 

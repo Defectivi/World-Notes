@@ -41,7 +41,7 @@ public final class BookmarkScreen extends Screen {
         left = (width - panelWidth) / 2;
         cardWidth = panelWidth - 52;
         int firstRow = hiddenView ? 73 : 98;
-        int available = Math.max(33, height - 46 - firstRow);
+        int available = Math.max(33, height - 70 - firstRow);
         cardHeight = Math.min(54, available);
         int pageSize = Math.max(1, (available + 6) / (cardHeight + 6));
         List<Bookmark> bookmarks = filtered();
@@ -110,6 +110,9 @@ public final class BookmarkScreen extends Screen {
             }
         }
         int footer = height - 26;
+        addRenderableWidget(Button.builder(Component.empty(), button -> WorldNotesClient.setScreen(minecraft, new MinimapSettingsScreen(this)))
+                .bounds(left, footer - 24, 20, 20).tooltip(Tooltip.create(Component.literal("Map settings")))
+                .createNarration(supplier -> Component.literal("Map settings")).build());
         if (!hiddenView) addRenderableWidget(Button.builder(Component.empty(), button ->
                 WorldNotesClient.setScreen(minecraft, hiddenScreen())).bounds(left, footer, 20, 20)
                 .createNarration(supplier -> Component.translatable("worldnotes.hidden.title"))
@@ -164,10 +167,11 @@ public final class BookmarkScreen extends Screen {
             graphics.text(font, font.split(dimensionComponent(bookmark.dimension), textWidth).getFirst(), textX, y + 11, accent, false);
         }
         if (!hiddenView) graphics.fakeItem(new ItemStack(Items.BARRIER), left + 2, height - 24);
+        graphics.fakeItem(new ItemStack(Items.COMPARATOR), left + 2, height - 48);
         if (rows.isEmpty()) {
             var lines = font.split(Component.translatable(query.isBlank() ? "worldnotes.empty" : "worldnotes.no_results"), panelWidth - 8);
             int firstRow = hiddenView ? 73 : 98;
-            int y = firstRow + Math.max(0, (height - 46 - firstRow - lines.size() * 11) / 2);
+            int y = firstRow + Math.max(0, (height - 70 - firstRow - lines.size() * 11) / 2);
             for (var line : lines) {
                 graphics.text(font, line, width / 2 - font.width(line) / 2, y, WorldNotesTheme.MUTED, false);
                 y += 11;
@@ -224,6 +228,11 @@ public final class BookmarkScreen extends Screen {
             case "minecraft:the_nether" -> "Nether"; case "minecraft:the_end" -> "The End"; default -> dimension; };
     }
     static Component dimensionComponent(String dimension) {
-        return Component.literal(friendly(dimension)).withStyle(style -> style.withColor(WorldNotesTheme.dimensionAccent(dimension) & 0xFFFFFF));
+        return switch (dimension) {
+            case "minecraft:overworld" -> Bookmark.gradientText(friendly(dimension), 0x56BC79, 0xB1F0C4);
+            case "minecraft:the_nether" -> Bookmark.gradientText(friendly(dimension), 0xFFBB62, 0xF56877);
+            case "minecraft:the_end" -> Bookmark.gradientText(friendly(dimension), 0xAD7FEA, 0xE4CDFF);
+            default -> Bookmark.gradientText(friendly(dimension), 0x6DD7EC, 0xB7CEE8);
+        };
     }
 }

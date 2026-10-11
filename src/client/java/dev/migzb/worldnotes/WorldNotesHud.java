@@ -30,8 +30,7 @@ public final class WorldNotesHud {
 
         long day = Math.floorDiv(minecraft.level.getOverworldClockTime(), 24000L);
         String dayLabel = "Day: " + day;
-        int bottom = minecraft.getWindow().getGuiScaledHeight();
-        graphics.text(minecraft.font, dayLabel, 9, bottom - 18, WHITE, true);
+        graphics.text(minecraft.font, dayLabel, 9, 32, WHITE, true);
 
         int center = minecraft.getWindow().getGuiScaledWidth() / 2;
         int direction = directionIndex(minecraft.player.getYRot());
@@ -65,7 +64,7 @@ public final class WorldNotesHud {
                 minecraft.font.width(dimension))) + 12;
         int right = minecraft.getWindow().getGuiScaledWidth() - 4;
         int left = right - width;
-        int top = WorldNotesMinimap.visible(minecraft) ? 18 + WorldNotesMinimap.SIZE + 20 : 30;
+        int top = WorldNotesMinimap.trackingTop(minecraft);
         graphics.text(minecraft.font, title, left + 6, top, WHITE, true);
         graphics.text(minecraft.font, destination, left + 6, top + 13, WHITE, true);
         graphics.text(minecraft.font, dimension, left + 6, top + 26, WHITE, true);

@@ -16,11 +16,14 @@ Install one jar matching both your Minecraft version and mod loader. Java 25 is 
 
 NeoForge's 26.3 loader is currently beta. Fabric 26.4-snapshot-3 builds are experimental CI artifacts and are excluded from stable release downloads.
 
-- North-up terrain minimap, configurable visibility/zoom keys, dimension-aware markers, and tracked destination guidance.
+- North-up minimap with a default 32-chunk radius, persistent client-observed terrain history, and an expanded map opened with M.
+- Item, neutral/passive mob, hostile mob, and player markers with expanded-map hover identification. Entity information is limited to what the server sends to the client.
+- Settings above the hidden list control map visibility, position, size, radius, marker categories, and the client-only rainbow outline on the exact tracked coordinate block.
+- Dimension gradients, a day counter below coordinates, a diary-and-quill icon, and loader names in jar filenames and mod-list entries. Version remains 1.0.0.
 - Searchable bookmarks with notes, hidden entries, colours, and a deepslate/cartography interface.
 - Separate world/server profiles, safe editor cancellation, validated coordinates, transactional saves, and automatic backup recovery.
 - Compile-checked HUD adapters preserve visibility and status messages on both Minecraft 26.1.2 and newer targets.
 
 Existing bookmark and minimap files in `config/worldnotes/` are shared across loaders when using the same game directory. Keep a copy before switching game versions.
 
-All supported targets are built before publication, with persistence regression tests on the Forge classpath. In-game rendering and interaction have not been manually verified for this release.
+All supported targets are built before publication, with persistence, terrain-cache, and settings regression tests on the Forge classpath. In-game rendering and interaction have not been manually verified for this release.

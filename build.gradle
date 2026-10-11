@@ -14,6 +14,7 @@ if (!targets.containsKey(channel)) throw new GradleException("Unknown channel '$
 def target = targets[channel]
 version = "${project.mod_version}+mc${target.minecraft}"
 group = project.maven_group
+base { archivesName = 'world-notes-fabric' }
 
 loom {
     splitEnvironmentSourceSets()
