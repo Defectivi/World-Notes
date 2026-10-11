@@ -1,18 +1,16 @@
 package dev.migzb.worldnotes;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
+import java.nio.file.Path;
+import java.util.List;
 
-public final class WorldNotesClient implements ClientModInitializer {
+public final class WorldNotesClient {
     private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
             net.minecraft.resources.Identifier.fromNamespaceAndPath("worldnotes", "general"));
     private static KeyMapping openManager;
@@ -21,25 +19,33 @@ public final class WorldNotesClient implements ClientModInitializer {
     private static String trackedId;
     private static String trackedProfile;
     private static Bookmark trackedEntry;
+    private static Path configDirectory;
 
-    @Override
-    public void onInitializeClient() {
+    public static void initialize(Path configDir) {
+        if (configDirectory != null) return;
+        configDirectory = configDir;
         BookmarkStore.load();
         WorldNotesMinimap.initialize();
-        toggleMinimap = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.worldnotes.toggle_minimap", InputConstants.KEY_M, CATEGORY));
-        zoomMinimap = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.worldnotes.zoom_minimap", InputConstants.KEY_N, CATEGORY));
-        openManager = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.worldnotes.open_manager", InputConstants.KEY_B, CATEGORY));
-        HudElementRegistry.addLast(net.minecraft.resources.Identifier.fromNamespaceAndPath("worldnotes", "coordinates"),
-                WorldNotesHud::render);
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            while (openManager.consumeClick()) setScreen(client, new BookmarkScreen());
-            while (toggleMinimap.consumeClick()) WorldNotesMinimap.toggle(client);
-            while (zoomMinimap.consumeClick()) WorldNotesMinimap.zoom(client);
-            WorldNotesMinimap.tick(client);
-        });
+        toggleMinimap = new KeyMapping("key.worldnotes.toggle_minimap", InputConstants.KEY_M, CATEGORY);
+        zoomMinimap = new KeyMapping("key.worldnotes.zoom_minimap", InputConstants.KEY_N, CATEGORY);
+        openManager = new KeyMapping("key.worldnotes.open_manager", InputConstants.KEY_B, CATEGORY);
+    }
+
+    public static Path configDirectory() {
+        if (configDirectory == null) throw new IllegalStateException("World Notes has not initialized");
+        return configDirectory;
+    }
+
+    public static List<KeyMapping> keyMappings() {
+        return List.of(openManager, toggleMinimap, zoomMinimap);
+    }
+
+    public static void tick(Minecraft client) {
+        if (configDirectory == null) return;
+        while (openManager.consumeClick()) setScreen(client, new BookmarkScreen());
+        while (toggleMinimap.consumeClick()) WorldNotesMinimap.toggle(client);
+        while (zoomMinimap.consumeClick()) WorldNotesMinimap.zoom(client);
+        WorldNotesMinimap.tick(client);
     }
 
     public static void setScreen(Minecraft client, Screen screen) {

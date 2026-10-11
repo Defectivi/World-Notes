@@ -9,7 +9,7 @@
   "license": "MIT",
   "environment": "client",
   "entrypoints": {
-    "client": ["dev.migzb.worldnotes.WorldNotesClient"]
+    "client": ["dev.migzb.worldnotes.WorldNotesFabric"]
   },
   "depends": {
     "fabricloader": ">=0.19.5",

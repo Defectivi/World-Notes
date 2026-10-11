@@ -1,0 +1,27 @@
+modLoader="javafml"
+loaderVersion="[66,)"
+license="MIT"
+clientSideOnly=true
+
+[[mods]]
+modId="worldnotes"
+version="${version}"
+displayName="World Notes & Coordinates"
+logoFile="assets/worldnotes/icon.png"
+authors="Yuhzhua"
+displayTest="IGNORE_ALL_VERSION"
+description='''Client-side terrain minimap and dimension-aware local coordinate bookmarks.'''
+
+[[dependencies.worldnotes]]
+modId="forge"
+mandatory=true
+versionRange="[66.0.10,67)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.worldnotes]]
+modId="minecraft"
+mandatory=true
+versionRange="[26.3]"
+ordering="NONE"
+side="CLIENT"

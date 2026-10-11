@@ -3,7 +3,6 @@ package dev.migzb.worldnotes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -18,7 +17,7 @@ import java.util.UUID;
 public final class BookmarkStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Type LIST_TYPE = new TypeToken<List<Bookmark>>() { }.getType();
-    private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("worldnotes/bookmarks.json");
+    private static final Path FILE = WorldNotesClient.configDirectory().resolve("worldnotes/bookmarks.json");
     private static final List<Bookmark> BOOKMARKS = new ArrayList<>();
 
     private BookmarkStore() { }

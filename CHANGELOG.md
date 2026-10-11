@@ -2,6 +2,13 @@
 
 All notable changes to the mod are documented here.
 
+## 0.2.1-beta
+
+- Added a client-side Forge build for Minecraft 26.3 / Forge 66.0.10.
+- Shared minimap, bookmark screens, tracking, and JSON saves between Fabric and Forge.
+- Isolated loader-specific entrypoints, key registration, client tick callbacks, and HUD registration.
+- Added Forge build instructions, a Forge CI job, and Forge to the all-target build script.
+
 ## 0.2.0-beta
 
 - Added a client-side north-up terrain minimap with player direction and dimension-aware bookmark markers.

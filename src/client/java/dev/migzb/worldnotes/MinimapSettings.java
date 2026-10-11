@@ -2,7 +2,6 @@ package dev.migzb.worldnotes;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
@@ -11,7 +10,7 @@ import java.nio.file.StandardCopyOption;
 
 final class MinimapSettings {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("worldnotes/minimap.json");
+    private static final Path FILE = WorldNotesClient.configDirectory().resolve("worldnotes/minimap.json");
     boolean enabled = true;
     int blocksPerPixel = 2;
 

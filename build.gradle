@@ -24,6 +24,8 @@ loom {
     }
 }
 
+sourceSets.client.java.srcDir 'src/fabric/java'
+
 dependencies {
     minecraft "com.mojang:minecraft:${target.minecraft}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"

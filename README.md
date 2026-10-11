@@ -1,10 +1,10 @@
 # World Notes & Coordinates
 
-A client-side Fabric terrain minimap and bookmark manager for Minecraft Java.
+A client-side Fabric and Forge terrain minimap and bookmark manager for Minecraft Java.
 
 Press **B** to open the bookmark manager. The keybind can be changed in Minecraft's Controls settings.
 
-## Current version: 0.2.0-beta
+## Current version: 0.2.1-beta
 
 Version targets checked on October 11, 2026 against [Fabric metadata](https://meta.fabricmc.net/v2/versions/game):
 
@@ -15,6 +15,12 @@ Version targets checked on October 11, 2026 against [Fabric metadata](https://me
 | legacy | 26.2 | 0.161.0+26.2 |
 
 Install only the jar matching your Minecraft version, with Fabric Loader 0.19.5 or newer and the matching Fabric API. Java 25 is required. Each jar declares its exact Minecraft target; future snapshots need a dependency update and a new build before they can be claimed as supported.
+
+### Forge
+
+Use the separate `world-notes-forge` jar with **Minecraft 26.3 and Forge 66.0.10 or newer in the 66.x series**. Install it on your client; servers do not need the mod. The Forge jar includes the same minimap, bookmark screens, tracking, keys, and local JSON saves, and does not need Fabric API. Choose the jar for your installed loader.
+
+Forge support targets 26.3 only. [Forge's official version list](https://files.minecraftforge.net/net/minecraftforge/forge/index_26.3.html) has no 26.4 snapshot build as of October 11, 2026; the snapshot channel remains Fabric-only. Forge and NeoForge are separate loaders; this build targets Forge.
 
 ## Minimap
 
@@ -33,11 +39,14 @@ Install only the jar matching your Minecraft version, with Fabric Loader 0.19.5 
 .\gradlew.bat build
 .\gradlew.bat build -Pchannel=snapshot
 .\gradlew.bat build -Pchannel=legacy
-# Or build all three:
+.\gradlew.bat -p forge build
+# Or build all Fabric channels and Forge:
 .\build-all.ps1
 ```
 
-Jars are written to `build/libs/` with the Minecraft version in the filename. CI compiles each channel independently. Compilation checks API compatibility; in-game testing is still needed for rendering and interaction.
+Fabric jars are written to `build/libs/`; Forge jars go to `forge/build/libs/`. CI compiles all Fabric channels and Forge independently. Compilation checks API compatibility; in-game testing is still needed for rendering and interaction.
+
+The common client features live in `src/client/java`. Fabric registration lives in `src/fabric/java`; Forge registration and metadata live in `forge/src/main`. Both loaders use `config/worldnotes/bookmarks.json` and `config/worldnotes/minimap.json` in their game directory.
 
 ## Bookmarks
 

@@ -1,0 +1,59 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle' version '7.0.17'
+}
+
+def sharedProperties = new Properties()
+file('../gradle.properties').withInputStream { sharedProperties.load(it) }
+version = "${sharedProperties.mod_version}+mc26.3"
+group = sharedProperties.maven_group
+
+if (providers.gradleProperty('channel').getOrElse('release') != 'release') {
+    throw new GradleException('Forge currently supports the release channel (Minecraft 26.3) only')
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    withSourcesJar()
+}
+
+sourceSets.main {
+    java.srcDir '../src/client/java'
+    resources {
+        srcDir '../src/main/resources'
+        exclude 'fabric.mod.json'
+    }
+}
+
+minecraft {
+    runs {
+        configureEach {
+            workingDir = layout.projectDirectory.dir('run')
+            systemProperty 'eventbus.api.strictRuntimeChecks', 'true'
+        }
+        register('client')
+    }
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+
+dependencies {
+    implementation minecraft.dependency('net.minecraftforge:forge:26.3-66.0.10')
+    annotationProcessor 'net.minecraftforge:eventbus-validator:7.0.6'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    def modVersion = project.version
+    filesMatching('META-INF/mods.toml') { expand version: modVersion }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
